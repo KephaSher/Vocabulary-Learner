@@ -1,0 +1,563 @@
+#:kivy 2.0.0
+# layout for word input boxes, they act like classes in CSS
+<InputFloatLayout@FloatLayout>:
+    size_hint: 1, None
+    height: 50
+# word inputs
+<WordTextInput@TextInput>:
+    pos_hint: {"x": 0.35, "top": 1}
+    size_hint: 0.6, 1
+    multiline: True
+# word labels
+<WordLabel@Label>:
+    pos_hint: {"x": 0.05, "top": 1}
+    size_hint: 0.25, 1
+    color: 0, 0, 0, 1
+    font_size: 35
+# seperators
+<SepLabel@Label>:
+    size_hint: None, None
+    size: root.width, 20
+
+# back button in top bar, manually put on_press function
+<BackButton@Button>:
+    pos_hint: {"x": 0, "top": 1}
+    size_hint: 0.1, 1
+    background_normal:'back.png'
+
+# top bar with back button and title (should I remove it?)
+<TopBar@FloatLayout>:
+    pos_hint: {"x": 0, "top": 1}
+    size_hint: 1, 0.05
+    cols: 3
+    canvas.before:
+        Color:
+            rgb: 0, 0, 0
+        Rectangle:
+            size: self.size
+            pos: self.pos
+    Label:
+        pos_hint: {"x": 0.2, "top": 1}
+        size_hint: 0.7, 1
+        color: 1, 1, 1, 1
+        text: 'Add Words'
+    Label:
+        pos_hint: {"x": 0.9, "top": 1}
+        size_hint: 0.1, 1
+
+<Main>:
+    play: play.__self__
+    arrange: arrange.__self__
+    add: add.__self__
+    total_answered: total_answered.__self__
+    correctness: correctness.__self__
+    greetings: greetings.__self__
+
+    FloatLayout: # blue square on title page
+        canvas.before:
+            Color:
+                rgb: 15/255, 144/255, 1
+            RoundedRectangle:
+                size: self.width, self.height * 0.2
+                pos: 0, self.height - self.height * 0.2
+                radius: 10, 10, 10, 10
+
+            # commented out because this will go to the user info popup
+            # Color:
+            #     rgba:
+            #         102/255, 163/255, 1, 0.4
+            # RoundedRectangle:
+            #     size: self.width - 20, self.height * 0.3
+            #     pos: 10, self.height - self.height * 0.53
+            #     radius: 10, 10, 10, 10
+
+        # Top section with name, list, title
+        # ----------------------------------
+        Button:
+            pos_hint: {"x" : 0.04, "top" : 0.992}
+            size_hint: 0.1, 0.05
+            background_normal: "list.png"
+
+        Label:
+            id: greetings
+            pos_hint: {"x": 0.45, "top": 0.98}
+            size_hint: 0.55, 0.1
+            text_size: self.size
+            font_size: 35
+            halign: 'center'
+            valign: 'top'
+            text: 'Good Morning, Kepha'
+
+        # label: 'Vocabulary Learner' title
+        Label:
+            pos_hint: {"left": 0, "top": 0.88}
+            size_hint: 1, 0.05
+            halign: 'center'
+            valign: 'center'
+            text: 'Vocabulary Learner'
+            color: 1, 1, 1, 1
+            font_size: 50
+            bold: True
+
+        # 2 CPBs for total answered and correctness respectively
+        # temp. invisible  because this will go to the user info popup
+        CircularProgressBar:
+            id: total_answered
+            pos: -100, -100 # here
+            max: 1
+            value: 0
+            cap_style: 'square'
+
+        CircularProgressBar:
+            id: correctness
+            pos: -100, -100 # and here
+            max: 1
+            value: 0
+            cap_style: 'square'
+
+        GridLayout:
+            rows: 1
+            cows: 3
+            pos_hint: {"x": 0, "bottom": 0}
+            size_hint: 1, 0.1
+
+            Button: # arrange words
+                id: arrange
+                text: 'word list'
+                on_release: 
+                    root.manager.current = 'list_words'
+                    root.manager.transition.direction = 'left'
+
+            Button: # main play button
+                id: play
+                text: 'play now'
+                on_release: 
+                    root.manager.current = 'play' if root.play_valid() else 'main_screen'
+                    root.manager.transition.direction = 'left'
+
+            Button: # add words
+                id: add
+                text: 'dictionary'
+                on_release: 
+                    root.manager.transition.direction = 'left'
+                    root.manager.current = 'add_words'
+
+<AddWords>:
+    word: word
+    mean1: mean1
+    mean2: mean2
+    mean3: mean3
+    mean4: mean4
+    mean5: mean5
+    syn1: syn1
+    syn2: syn2
+    syn3: syn3
+    sent: sent
+    other: other
+
+    confirm: confirm
+    cancel: cancel
+
+    noun: noun
+    verb: verb
+    adj: adj
+    adv: adv
+    other_c: other_c
+
+    # top bar
+    TopBar:
+        BackButton:
+            on_release:
+                root.manager.get_screen('main_screen').update()
+                root.manager.transition.direction = 'right' 
+                root.manager.current = 'main_screen'
+
+    # main add words section (inputs, checkboxes, etc)
+    ScrollView:
+        do_scroll: True
+        pos_hint: {"x": 0, "top": 0.93}
+        GridLayout:
+            size_hint_y: None
+            height: self.minimum_height
+            pos: 0, 0
+            size_hint_x: 1
+            cols: 1
+            InputFloatLayout:
+                WordLabel:
+                    text: 'Word Name: '
+                WordTextInput:
+                    id: word
+                    hint_text: 'Enter word'
+                    on_text_validate:
+            SepLabel
+
+            InputFloatLayout:
+                CheckBox:
+                    id: noun
+                    pos_hint: {"x": 0.1, "top": 0.75}
+                    size_hint: 0.05, 0.5
+                Label:
+                    pos_hint: {"x": 0.17, "top": 1}
+                    size_hint: 0.1, 1
+                    text: 'Noun'
+                    color: 0, 0, 0, 1
+                CheckBox:
+                    id: verb
+                    pos_hint: {"x": 0.3, "top": 0.75}
+                    size_hint: 0.05, 0.5
+                Label:
+                    pos_hint: {"x": 0.37, "top": 1}
+                    size_hint: 0.1, 1
+                    text: 'Verb'
+                    color: 0, 0, 0, 1
+                CheckBox:
+                    id:adj
+                    pos_hint: {"x": 0.5, "top": 0.75}
+                    size_hint: 0.05, 0.5
+                Label:
+                    pos_hint: {"x": 0.57, "top": 1}
+                    size_hint: 0.1, 1
+                    text: 'Adj'
+                    color: 0, 0, 0, 1
+                CheckBox:
+                    id: adv
+                    pos_hint: {"x": 0.7, "top": 0.75}
+                    size_hint: 0.05, 0.5
+                Label:
+                    pos_hint: {"x": 0.77, "top": 1}
+                    size_hint: 0.1, 1
+                    text: 'Adv'
+                    color: 0, 0, 0, 1
+            SepLabel
+
+            InputFloatLayout:
+                Label:
+                    pos_hint: {"x": 0.25, "top": 1}
+                    size_hint: 0.1, 1
+                    text: 'Other'
+                    color: 0, 0, 0, 1
+                CheckBox:
+                    id: other_c
+                    pos_hint: {"x": 0.38, "top": 0.75}
+                    size_hint: 0.05, 0.5
+                TextInput:
+                    id: other
+                    disabled: True
+                    pos_hint: {"x": 0.45, "top": 1}
+                    size_hint: 0.3, 1
+                    multiline: False
+                    hint_text: 'Enter text'
+
+            SepLabel:
+                height: 40
+
+            InputFloatLayout:
+                WordLabel:
+                    text: 'Meaning: '
+                WordTextInput:
+                    id: mean1
+                    hint_text: 'Enter the meaning'
+            SepLabel
+
+            InputFloatLayout:
+                WordLabel
+                WordTextInput:
+                    id: mean2
+                    hint_text:'Enter the 2nd meaning (optional)'
+            SepLabel
+            
+            InputFloatLayout:
+                WordLabel
+                WordTextInput:
+                    id: mean3
+                    hint_text: 'Enter the 3rd meaning (optional)'
+            SepLabel
+
+            InputFloatLayout:
+                WordLabel
+                WordTextInput:
+                    id: mean4
+                    hint_text: 'Enter the 4th meaning (optional)'
+            SepLabel
+
+            InputFloatLayout:
+                WordLabel
+                WordTextInput:
+                    id: mean5
+                    hint_text: 'Enter the 5th meaning (optional)'
+            SepLabel:
+                height: 40
+
+            InputFloatLayout:
+                WordLabel:
+                    text:'Synonym: '
+                WordTextInput:
+                    id: syn1
+                    hint_text: 'Enter the synoonym'
+            SepLabel
+
+            InputFloatLayout:
+                WordLabel
+                WordTextInput:
+                    id: syn2
+                    hint_text:'Enter the 2nd synoonym (optional)'
+            SepLabel
+
+            InputFloatLayout:
+                WordLabel
+                WordTextInput:
+                    id:syn3
+                    hint_text:'Enter the 3rd synoonym (optional)'
+            SepLabel
+
+            InputFloatLayout:
+                height: 150
+                WordLabel:
+                    text: 'Sentence: '
+                    size_hint: 0.25, 0.4
+                WordTextInput:
+                    id: sent
+                    hint_text:'Enter the sentence'
+
+            SepLabel:
+                height: 100
+
+            InputFloatLayout:
+                height: 80
+                Button:
+                    id: confirm
+                    pos_hint: {"x": 0.1, "top": 1}
+                    size_hint: 0.25, 1
+                    background_normal: 'confirm.png'
+                    on_release: root.confirm_pressed()
+
+                Button:
+                    id: cancel
+                    pos_hint: {"x": 0.65, "top": 1}
+                    size_hint: 0.25, 1
+                    background_normal: 'cancel.png'
+                    on_press: root.cancel_pressed()
+            SepLabel:
+                height: 150
+
+# checkboxes for the 4 answers
+<answerchx@CheckBox>:
+    group:'answers'  
+    size_hint: 0.05, 0.03
+# labels for the 4 answers
+<anslbl@Label>:
+    text:''
+    color: 0, 0, 0, 1
+    size_hint: 0.7, 0.1  
+    halign: 'left'
+    valign: 'middle'
+    text_size: self.size
+
+<Play>:
+    word:  word
+    ans1:  ans1
+    ans2:  ans2
+    ans3:  ans3
+    ans4:  ans4
+    ans1t: ans1t
+    ans2t: ans2t
+    ans3t: ans3t
+    ans4t: ans4t
+    next:  next
+    correct_percentage: correct_percentage
+    correct_num: correct_num
+    incorrect_num: incorrect_num
+
+    # top bar
+    GridLayout:
+        pos_hint: {"x": 0, "top": 1}
+        size_hint: 1, 0.05
+        cols: 3
+        canvas.before:
+            Color:
+                rgb: 0, 0, 0
+            Rectangle:
+                size: self.size
+                pos: self.pos
+        Button:
+            pos_hint: {"x": 0, "top": 1}
+            size_hint: 0.1, 1
+            background_normal:'back.png'
+            on_release: 
+                root.manager.get_screen('main_screen').update(root.total_answers, root.correct_answers)
+                root.manager.transition.direction = 'right' 
+                root.manager.current = 'main_screen'
+        Label:
+            pos_hint: {"x": 0.2, "top": 1}
+            size_hint: 0.7, 1
+            color: 1, 1, 1, 1
+            text: 'Learn Words'
+        Label:
+            pos_hint: {"x": 0.9, "top": 1}
+            size_hint: 0.1, 1
+
+    ScrollView:
+        do_scroll: True
+        pos_hint: {"x": 0, "top": 0.95}
+        GridLayout:
+            size_hint_y: None
+            height: self.minimum_height
+            pos: 0, 0
+            size_hint_x: 1
+            cols: 1
+            FloatLayout:
+                # white + blue square in the middle
+                size_hint: 1, None
+                height: 1000
+                canvas.before:
+                    Color:
+                        rgb: 128/255, 223/255, 1
+                    RoundedRectangle:
+                        size: self.width - 20, self.height * 0.55
+                        pos: 10, self.height - self.height * 0.75 - 15
+                        radius: 50, 50, 50, 50
+                    Color:
+                        rgb: 240/255, 1, 1
+                    RoundedRectangle:
+                        size: self.width - 40, self.height * 0.52
+                        pos: 20, self.height - self.height * 0.75
+                        radius: 50, 50, 50, 50
+
+                # big word on top
+                Label:
+                    id: word
+                    pos_hint: {"x": 0.2, "top": 0.95}
+                    size_hint: 0.6, 0.1
+                    color: 0, 0, 0, 1
+                    font_size: 45
+                    text: ''
+                    canvas.before:
+                        Color:
+                            rgba: 102/255, 153/255, 1, 0.6
+                        RoundedRectangle:
+                            size: self.size
+                            pos: self.pos
+                            radius: 25, 25, 25, 25
+
+                # question label
+                Label:
+                    text:'What is the meaning of this word?'
+                    pos_hint: {"x": 0, "top": 0.77}
+                    size_hint:0.9,0.1
+                    color:0,0,0,1
+                    font_size:30
+
+                answerchx:
+                    id: ans1
+                    pos_hint: {"x": 0.12, "top": 0.64}
+                    on_release: root.check(self)
+                anslbl:
+                    id: ans1t
+                    pos_hint: {"x": 0.2, "top": 0.675}
+                answerchx:
+                    id: ans2
+                    pos_hint: {"x": 0.12, "top": 0.54}
+                    on_release: root.check(self)
+                anslbl:
+                    id: ans2t
+                    pos_hint: {"x": 0.2, "top": 0.575}
+                answerchx:
+                    id: ans3
+                    pos_hint: {"x": 0.12, "top": 0.44}
+                    on_release: root.check(self)
+                anslbl:
+                    id: ans3t
+                    pos_hint: {"x": 0.2, "top": 0.475}
+                answerchx:
+                    id:ans4
+                    pos_hint: {"x": 0.12, "top": 0.34}
+                    on_release: root.check(self)
+                anslbl:
+                    id: ans4t
+                    pos_hint: {"x": 0.2, "top": 0.375}
+                Button:
+                    id: next
+                    size_hint: 0.4, 0.08
+                    pos_hint: {"x": 0.5, "top": 0.2}
+                    text: "Next question"
+                    on_press: root.nextWord()
+                    background_color: 15/255, 144/255, 1, 0
+                    canvas.before:
+                        Color:
+                            rgb: 15/255, 144/255, 1
+                        RoundedRectangle:
+                            size: self.size
+                            pos: self.pos
+                            radius: 25, 25, 25, 25  
+
+                # CPB for correct percentage                             
+                CircularProgressBar:
+                    id: correct_percentage
+                    label: root._label
+                    size_hint: 0.2, 0.2
+                    pos: 50, 0
+                    thickness: 13
+                    progress_colour: 204/255, 153/255, 1
+                    max: 10
+                    value: 1
+                    cap_style: 'square'
+
+                # these 2 labels needs to be made prettier
+                Label:
+                    id:correct_num
+                    color:0,0,0,1
+                    size_hint:0.4,0.08
+                    pos_hint:{"x":0.45,"top":0.1}
+                    text_size:self.size
+                    text:"Answered correctly "
+                    canvas.before:
+                        Color:
+                            rgb:240/255,1,1
+                        RoundedRectangle:
+                            size:self.width+25,self.height*2+30
+                            pos:self.width+15,self.height-160
+                            radius:25,25,25,25   
+                Label:
+                    id:incorrect_num
+                    color:0,0,0,1
+                    size_hint:0.4,0.08
+                    pos_hint:{"x":0.45,"top":0.02}
+                    text_size:self.size
+                    text:"Ansered Incorrectly "
+
+            Label:
+                height:200
+
+
+# not finished     
+<ListWords>:
+    # top bar
+    GridLayout:
+        pos_hint:{"x":0,"top":1}
+        size_hint:1,0.05
+        cols:3
+        canvas.before:
+            Color:
+                rgb:0,0,0
+            Rectangle:
+                size:self.size
+                pos:self.pos
+        Button:
+            pos_hint:{"x":0,"top":1}
+            size_hint:0.1,1
+            background_normal:'back.png'
+            on_release: 
+                root.manager.transition.direction = 'right' 
+                root.manager.current = 'main_screen'
+        Label:
+            pos_hint: {"x": 0.2, "top": 1}
+            size_hint: 0.7, 1
+            color: 1, 1, 1, 1
+            text:'Word Lists'
+        Label:
+            pos_hint: {"x": 0.9, "top": 1}
+            size_hint: 0.1, 1
+    ScrollView:
+        do_scroll: True
+        pos_hint: {"x": 0, "top": 0.95}
+
