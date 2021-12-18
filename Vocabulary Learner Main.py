@@ -513,15 +513,6 @@ class AddWords(Screen):
     # meaning layout
     meanings_layout = ObjectProperty(None)
 
-    # the textbox for the 1st word
-    mean1 = ObjectProperty(None)
-
-    # the textbox for the 2nd word
-    mean2 = ObjectProperty(None)
-
-    # the textbox for the 3rd word
-    mean3 = ObjectProperty(None)
-
     # the button to pick a word list; the main button of the dropdown
     word_list_btn = ObjectProperty(None)
 
@@ -646,22 +637,28 @@ class AddWords(Screen):
     def createAddNewListModal(self, btn: Button):
         # modal view that contains a textinput and a confirm button 
         self.add_list_modal = ModalView(pos_hint={"center_x": 0.5, "center_y": 0.5}, size_hint=(0.8, 0.8))
+        self.add_list_modal.background = "word_list_modal.jpg"
+
         # main layout for the modal view
         layout = FloatLayout()
 
         # textinput, confirm button (binded to `self._add_new_list`)
-        self.modal_txtinpt = TextInput(pos_hint={"x": 0.1, "top": 0.8}, size_hint=(0.8, 0.2))
-        self.modal_confirm_btn = Button(pos_hint={"center_x": 0.5, "top": 0.3}, size_hint=(0.6, 0.1), text='add list')
-        self.modal_confirm_btn.bind(on_press=self.add_new_list)
+        self.modal_txtinpt = TextInput(pos_hint={"x": 0.1, "top": 0.8}, size_hint=(0.8, 0.4), 
+            hint_text="type in the name of the new list", background_color=(137/255, 166/255, 215/255))
+
+        self.modal_confirm_btn = Button(pos_hint={"center_x": 0.5, "top": 0.3}, size_hint=(0.6, 0.1),
+            background_normal = "add_list.jpg")
+        self.modal_confirm_btn.bind(on_press = lambda x: self.add_new_list)
 
         # put stuff into the main layout
         layout.add_widget(self.modal_txtinpt)
         layout.add_widget(self.modal_confirm_btn)
 
         # button that dismiss the modal at the top left corner
-        btn = Button(pos_hint={"x":0.85, "top": 1}, size_hint=(0.15, 0.07), text='x')
-        btn.bind(on_press=self.add_list_modal.dismiss)
-        layout.add_widget(btn)
+        closeBtn = Button(pos_hint={"x":0.82, "top": 0.983}, size_hint=(0.13, 0.065),
+            background_color=(0, 0, 0, 0))
+        closeBtn.bind(on_press=self.add_list_modal.dismiss)
+        layout.add_widget(closeBtn)
 
         self.add_list_modal.add_widget(layout)
 
@@ -753,9 +750,10 @@ class AddWords(Screen):
     `AddWords.confirmed_pressed()`
     Called when cancel button is pressed
 
-    1. Throws a popup to warn the user
+    1. Clears everything
     """
     def cancel_pressed(self):
+        self.update()
         self.open_modal("Cancelled")
     
     """
@@ -964,7 +962,7 @@ class SingleList(Screen):
     1. Sets the list to practice in main screen to the current list
     """
     def set_active(self, btn: Button):
-        print("[INFO   ] [Me        ] New word list: {}".format(self.word_list))
+        print("New word list: {}".format(self.word_list))
         self.manager.get_screen('main_screen').list_to_practice = self.word_list
 
     """
