@@ -1,6 +1,7 @@
 import json
-from random import randint
 import time
+from random import randint
+from datetime import datetime, timedelta
 from collections import defaultdict
 
 import kivy
@@ -8,28 +9,37 @@ from kivy.app import App
 from kivy.lang import Builder
 from kivy.core.window import Window
 
+from kivy.graphics import *
+from kivy.graphics import RoundedRectangle
+
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.scrollview import ScrollView
 
+from kivy.uix.widget import Widget
 from kivy.core.text import Label as textLabel
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.checkbox import CheckBox
 from kivy.uix.progressbar import ProgressBar
-from circular_progress_bar import CircularProgressBar
 from kivy.uix.textinput import TextInput
 from kivy.uix.popup import Popup
 from kivy.uix.modalview import ModalView
+from kivy.uix.togglebutton import ToggleButton
 from kivy.properties import ObjectProperty
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.dropdown import DropDown
 
+# Not natively in Kivy
+from circular_progress_bar import CircularProgressBar
+from wrapped_label import WrappedLabel
+from wrapped_button import WrappedButton
+
+LEARNED_THRESHOLD = 0.8
+FAMILIAR_THRESHOLD = 0.45
+
 # load kv file
 Builder.load_file("vocab.kv")
-
-file = open('Vocabulary_Words.json', 'r')
-js = json.load(file)
 
 """
 Json File Structure
@@ -73,16 +83,20 @@ Root (dict):
             answered correctly (int)
             answered total (int)
 """
+file = open('Vocabulary_Words.json', 'r')
+js = json.load(file)
 
 # Because looping through the words everytime is very inefficient, create a dictionary 
 # that maps lists to words
 
 word_lists = defaultdict(lambda: [])
 
+# generates word_lists
 def generate_word_lists():
     word_lists.clear()
     for word in js['WordList']:
         word_lists[js['WordList'][word][3]].append(word)   
+# removes keys with empty lists in `word_lists`
 def update_word_lists():        
     i = 0
     while i < len(word_lists):
@@ -91,21 +105,20 @@ def update_word_lists():
         else: i += 1
 generate_word_lists()
 
+# total question answered and number of them that are correct for this login
 total_question_answered = 0
 total_question_answered_correct = 0
 
+screen_manager = ScreenManager()
+
 class Main(Screen):
-    # total number of times the current word is answered
-    total_answered = ObjectProperty(None)
-
-    # the number of correct times the current word is answered
-    correctness = ObjectProperty(None)
-
+    # label that shows the current list that the user is practicing
+    current_list = ObjectProperty(None)
 
     # the next button
     next = ObjectProperty(None)
     
-    # CPB of correct percentage
+    # value for the CPB
     correct_percentage = ObjectProperty(None)
 
     # label: number of times answered correctly
@@ -113,6 +126,9 @@ class Main(Screen):
 
     # label: number of times answered incorrectly
     incorrect_num = ObjectProperty(None)
+
+    # the user profile button
+    profile_btn = ObjectProperty(None)
 
     # if the user answered correctly
     answer_correct = False
@@ -139,7 +155,6 @@ class Main(Screen):
         # answers questions
         self.total_answered.label = textLabel(font_size=35)
         self.correctness.label = textLabel(font_size=35)
-
         self.update()
 
     """
@@ -203,61 +218,62 @@ class Main(Screen):
 
         hour = time.localtime()[3]
         if hour > 7 and hour < 13:
-            self.greetings.text = "Good Morning, " + username[0]
+            self.profile_btn.text = "Good Morning, " + username[0]
         elif hour > 12 and hour < 19:
-            self.greetings.text = "Good Afternoon, " + username[0]
+            self.profile_btn.text = "Good Afternoon, " + username[0]
         else:
-            self.greetings.text = "Good Evening, " + username[0]
+            self.profile_btn.text = "Good Evening, " + username[0]
 
         if self.play_valid():
+            # set the label of the current list
+            self.current_list.text = "Currently studying: " + self.list_to_practice
             self.get_word()
         else:
             self.deactivate()
 
-        # # update questions_answered
-        # # -------------------------
+        # update questions_answered
+        # -------------------------
 
-        # # max: the user's goal of how many questions they want to answer
-        # self.total_answered.max = js['User']['goal']
+        # max: the user's goal of how many questions they want to answer
+        self.total_answered.max = js['User']['goal']
 
-        # # value: how many questions they actually answered
-        # self.total_answered.value = min(self.total_answered.max, new_questions_answered)
+        # value: how many questions they actually answered
+        self.total_answered.value = min(self.total_answered.max, total_question_answered)
 
-        # today = time.localtime()[2]
+        today = time.localtime()[2]
 
-        # # add all of the questions answered from previous logins from the today
-        # for login in js['Login info']['all logins']:
-        #     if login[0][2] == today and self.total_answered.value < self.total_answered.max:
-        #         self.total_answered.value = min(
-        #             self.total_answered.value + login[2], self.total_answered.max)
+        # add all of the questions answered from previous logins from the today
+        for login in js['Login info']['all logins']:
+            if login[0][2] == today and self.total_answered.value < self.total_answered.max:
+                self.total_answered.value = min(
+                    self.total_answered.value + login[2], self.total_answered.max)
 
-        # self.total_answered._default_label_text = str(self.total_answered.value) + " / " \
-        #     + str(self.total_answered.max) + "\n   {}%"
-        # self.total_answered._text_label.refresh()
+        self.total_answered._default_label_text = str(self.total_answered.value) + " / " \
+            + str(self.total_answered.max) + "\n   {}%"
+        self.total_answered._text_label.refresh()
 
         # update correctness
         # ------------------
 
-        # # the questions answered correctly today
-        # correct_count = 0
+        # the questions answered correctly today
+        correct_count = 0
 
-        # # number of questions answered today
-        # total_count = 0
+        # number of questions answered today
+        total_count = 0
 
-        # # these are used to figure out the precentage of correctness
+        # these are used to figure out the precentage of correctness
 
-        # # calculate precentage from questions answered from previous logins from the today
-        # for login in js['Login info']['all logins']:
-        #     if login[0][2] == today:
-        #         correct_count += login[1]
-        #         total_count += login[2]
+        # calculate precentage from questions answered from previous logins from the today
+        for login in js['Login info']['all logins']:
+            if login[0][2] == today:
+                correct_count += login[1]
+                total_count += login[2]
 
-        # # update questions_correct
-        # self.correctness.max = max(total_count + new_questions_answered, 1) # max has to be at least 1
-        # self.correctness.value = correct_count + new_questions_correct
-
-        # self.correctness._default_label_text = "Correct\n   {}%"
-        # self.correctness._text_label.refresh()
+        # update questions_correct
+        self.correctness.max = max(1, total_count)
+        self.correctness.value = correct_count
+        self.correctness._default_label_text = "Correct\n   {}%"
+        self.correctness._text_label.refresh()
 
     """
     `Main.get_word()`
@@ -276,13 +292,55 @@ class Main(Screen):
         # ---------------------------- Pick New Word -----------------------------
         word_list = word_lists[self.list_to_practice]
 
+        learned = []
+        familiar = []
+        to_learn = []
+        for word in word_list:
+            correct_percentage = 0 if js['WordList'][word][2] == 0 \
+                else js['WordList'][word][1] / js['WordList'][word][2]
+            if correct_percentage > LEARNED_THRESHOLD:
+                learned.append(word)
+            elif correct_percentage > FAMILIAR_THRESHOLD:
+                familiar.append(word)
+            else:
+                to_learn.append(word)
+
 
         # selects the correct word `self.wordName`
-        self.wordName = word_list[randint(0, len(word_list) - 1)]
+        # ----------------------------------------
+
+        # the most basic recommendation algorithm... 
+        # 80% to_learn, 20% familiar, 10% learned
+        random_number = randint(1, 10)
+
+        if len(to_learn) > 0 and len(familiar) > 0 and len(learned) > 0:
+            if random_number < 8: 
+                self.wordName = to_learn[randint(0, len(to_learn) - 1)]
+            elif random_number < 10:
+                self.wordName = familiar[randint(0, len(familiar) - 1)]
+            else:
+                self.wordName = learned[randint(0, len(learned) - 1)]
+        elif len(to_learn) == 0:
+            if random_number < 7:
+                self.wordName = familiar[randint(0, len(familiar) - 1)]
+            else:
+                self.wordName = learned[randint(0, len(learned) - 1)]
+        elif len(familiar) == 0:
+            if random_number < 9:
+                self.wordName = to_learn[randint(0, len(to_learn) - 1)]
+            else:
+                self.wordName = learned[randint(0, len(learned) - 1)]
+        elif len(learned) == 0:
+            if random_number < 7:
+                self.wordName = to_learn[randint(0, len(to_learn) - 1)]
+            else:
+                self.wordName = familiar[randint(0, len(familiar) - 1)]
+        else:
+            self.wordName = word_list[randint(0, len(word_list) - 1)]
+
 
         # sets the main word label on the top
         self.word.text = self.wordName
-
 
         # index 2 is the total number of times answered
         self.correct_percentage.max = max(1, js['WordList'][self.wordName][2])
@@ -346,12 +404,8 @@ class Main(Screen):
         # update CPB, labels about the current word
     
         # labels
-        self.correct_num.text = "Answered correctly " + \
-            str(js['WordList'][self.wordName][1]) + " time(s)"
-
-        self.incorrect_num.text = "Answered incorrectly " + \
-            str(js['WordList'][self.wordName][2] - js['WordList'][self.wordName][1]) \
-                    + " time(s)"
+        self.correct_num.text = str(js['WordList'][self.wordName][1]) 
+        self.incorrect_num.text = str(js['WordList'][self.wordName][2] - js['WordList'][self.wordName][1])
 
         # CPBs
         self.correct_percentage.max = max(1, js['WordList'][self.wordName][2])
@@ -419,14 +473,63 @@ class Main(Screen):
             self.answer_correct = False
             self.get_word()
 
+    """
+    `Main.go_to_profile(btn: Button)`
+    Called when user presses the profile button
+    """
+    def go_to_profile(self):
+        modal = UserProfile(pos_hint={"center_x": 0.5, "center_y": 0.5}, size_hint=(0.8, 0.8))
+        modal.open()
+
+    """
+    `Main.go_to_settings()`
+    Called when user presses the profile button
+    """
+    def go_to_settings(self):
+        modal = Settings(pos_hint={"center_x": 0.5, "center_y": 0.5}, size_hint=(0.8, 0.8))
+        modal.open()
+
 class AddWords(Screen):
+    class MeaningInput(TextInput):
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            self.multiline = True
+            self.size_hint_y = None
+            self.height = 200
+            self.hint_text = " Enter meaning"
+            self.background_normal = "meaning_input.jpg"
+            self.background_active = "meaning_input.jpg"
+            self.padding = (10, 10) # padding_x = padding_y = 10
+
+    # the textbox for the main word
     word = ObjectProperty(None)
+
+    # list of meaning inputs
+    meaningInputs = list()
+
+    # meaning layout
+    meanings_layout = ObjectProperty(None)
+
+    # the textbox for the 1st word
     mean1 = ObjectProperty(None)
+
+    # the textbox for the 2nd word
     mean2 = ObjectProperty(None)
+
+    # the textbox for the 3rd word
     mean3 = ObjectProperty(None)
+
+    # the button to pick a word list; the main button of the dropdown
     word_list_btn = ObjectProperty(None)
+
+    # confirm button
     confirm = ObjectProperty(None)
+
+    # cancel button
     cancel = ObjectProperty(None)
+
+    # message for the notice modal
+    message = str()
 
     """
     `AddWords.__init__(**kwargs)`
@@ -435,21 +538,44 @@ class AddWords(Screen):
         super().__init__(**kwargs)
         # word list the current word is in
         self.word_list = str()
+        self.add_meaning_btn = Button(size_hint_y = None, height = 95,
+            background_normal="add_meaning2.jpg")
+        self.add_meaning_btn.bind(on_press=self.add_new_meaningInput)
         self.update()
     
+    def add_new_meaningInput(self, btn: Button):
+        self.meanings_layout.remove_widget(self.add_meaning_btn)
+        self.meaningInputs.append(self.MeaningInput())
+        self.meanings_layout.add_widget(self.meaningInputs[-1])
+        self.meanings_layout.add_widget(self.add_meaning_btn)
+
     """
     `AddWords.update()`
-    Called when screen is switched
+    Called when screen is switched or confirm button pressed
 
     1. clears the word label and meaning labels
     2. dropdown list button
     4. dropdown itself (add new list button + everything else)
     """
     def update(self):
-        widget_list = [self.word, self.mean1, self.mean2, self.mean3]
-        for widget in widget_list: widget.text = ''
+        # set word textinput to blank
+        self.word.text = ''
 
-        self.word_list_btn.text = 'choose list'
+        # remove the add meaning button
+        self.meanings_layout.remove_widget(self.add_meaning_btn)
+
+        # remove all meaning textinputs
+        for meainginput in self.meaningInputs:
+            self.meanings_layout.remove_widget(meainginput)
+        
+        # add a new one
+        self.meaningInputs = [self.MeaningInput()]
+        self.meanings_layout.add_widget(self.meaningInputs[0])
+
+        # add the add meaning button to the end
+        self.meanings_layout.add_widget(self.add_meaning_btn)
+
+        self.word_list_btn.text = 'Choose List'
         self.word_list = ''
         self.createDropDown()
 
@@ -464,13 +590,15 @@ class AddWords(Screen):
         self.dropdown = DropDown()
 
         # [add new list] button created separately from the rest, binded to `self.add_new_list`
-        btn = Button(text="Add new list", height=60, size_hint_y=None)
+        btn = Button(text="Add new list", height=60, size_hint_y=None, color=(0, 0, 0, 1),
+            background_normal="single_list.jpg")
         btn.bind(on_press=self.createAddNewListModal)
         self.dropdown.add_widget(btn)
 
         # other buttons are added based on word lists
         for word_list in word_lists:
-            btn = Button(text=word_list, height=60, size_hint_y=None)
+            btn = Button(text=word_list, height=60, size_hint_y=None, color=(0, 0, 0, 1),
+                background_normal="single_list.jpg")
 
             # when button is pressed, call select() in dropdown
             btn.bind(on_press = lambda btn: self.dropdown.select(btn.text))
@@ -570,50 +698,77 @@ class AddWords(Screen):
     1. If word already exists, X
     2. If first meaning is empty, X
     3. If word list not selected, X
-    4. 
     """
     def confirm_pressed(self):
-        # checks if all info is legal
+        self.word.text = self.word.text.strip()
+        self.word.text.replace('\n', '')
 
+        meanings = []
+        # get the text from all the textboxes
+        for meaninginput in self.meaningInputs:
+            meaninginput.text = meaninginput.text.strip()
+            meaninginput.text = meaninginput.text.replace('\n', '')
+            if len(meaninginput.text) != 0:
+                meanings.append(meaninginput.text)
+
+        # checks if all info is legal
         # if word exists
         if self.word.text in js['WordList'].keys():
-            popup = InputError('The word is already in\nyour word list')
-            popup.open()
+            self.open_modal('The word is already in\nyour word list')
         # if text input is empty
-        elif len(self.mean1.text) == 0:
-            popup = InputError('Please fill in the blanks\nthat are not optional')
-            popup.open()
-        elif self.word_list_btn.text == 'choose list':
-            popup = InputError('Please select the word list')
-            popup.open()
+        elif len(meanings) == 0:
+            self.open_modal('Please fill in at least one blank')
+        elif self.word_list_btn.text == 'Choose List':
+            self.open_modal('Please select the word list')
         else:
             current_word = self.word.text # the current word
-            meanings = [self.mean1.text, self.mean2.text, self.mean3.text]
-
-            mean_list = [] # list of meanings
-
-            for meaning in meanings:
-                if meaning != '':
-                    mean_list.append(meaning)
-
             # update js file
-            js['WordList'][current_word] = [mean_list, 0, 0, self.word_list]
+            js['WordList'][current_word] = [meanings, 0, 0, self.word_list]
 
             # update `word_lists` info
             word_lists[self.word_list].append(current_word)
 
-            popup = Notice('save', self)
-            popup.open()
+            self.open_modal("Word saved")
 
+            self.update()
+
+    """
+    `AddWords.confirmed_pressed()`
+    Called when cancel button is pressed
+
+    1. Throws a popup to warn the user
+    """
     def cancel_pressed(self):
-        popup = Notice('cancel', self)
-        popup.open()
+        self.open_modal("Cancelled")
+        
+    def open_modal(self, message: str):
+        self.message = message
+        modal = Notice()
+        modal.bind(on_open=self.close_modal)
+        modal.open()
+
+    def close_modal(self, modal):
+        # pause for 0.5 seconds to let the user see the message
+        time.sleep(0.5)
+        modal.dismiss()
 
 class WordsList(Screen):
+    # main layout
     main_layout = ObjectProperty(None)
+
+    # Button that lets user add another word, located 'on top' of the scroll view
     add_word_btn = ObjectProperty(None)
+
+    # Scrollview for all the word lists
     scrollview = ScrollView()
 
+    """
+    `AddWords.__init__(**kwargs)`
+    Constructor
+    
+    1. Creates add_word_btn, binded to self.add_word
+    2. Calls update
+    """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -622,8 +777,8 @@ class WordsList(Screen):
         # 84/how-to-create-a-fixed-button-on-top-of-a-scrollview-in-kivy 
 
         # Note: you can't write this in kv lang since it needs to be after the scrollview
-        self.add_word_btn = Button(text="add word", 
-            pos_hint={"center_x": 0.75, "center_y": 0.2}, size_hint=(0.3, 0.1))
+        self.add_word_btn = Button(pos_hint={"x": 0.61, "top": 0.338}, 
+            size_hint=(0.3, 0.137), background_color=(0, 0, 0, 0))
         
         self.add_word_btn.bind(on_press=self.add_word)
         self.update()
@@ -646,24 +801,26 @@ class WordsList(Screen):
         self.main_layout.remove_widget(self.scrollview)
 
         # scrollview that contains the word lists
-        self.scrollview = ScrollView(pos_hint={"x": 0, "top": 1}, 
-            size_hint=(1, 0.9), do_scroll=True)
+        self.scrollview = ScrollView(pos_hint={"x": 0.07, "top": 0.959}, 
+            size_hint=(0.84, 0.84), do_scroll=True)
         
         # inside it put a gridlayout with 2 columns
         scrollview_layout = GridLayout(size_hint_y=None, size_hint_x=1, 
-            row_force_default=True, row_default_height=100, pos=(0, 0), cols=2)
+            row_force_default=True, row_default_height=100, pos=(0, 0), cols=2, spacing=40)
+        scrollview_layout.bind(minimum_height=scrollview_layout.setter('height'))
 
         # size_hint: 0.35 x 0.1
 
         # Put the buttons inside the gridlayout
         for word_list in word_lists:
-            btn = Button(text=word_list)
+            btn = Button(text=word_list, background_normal="word_list.jpg", font_size=20, 
+                color=(0, 0, 0, 1))
             btn.bind(on_press=self.go_to_list)
             scrollview_layout.add_widget(btn)
 
         # add an empty button to the grid layout if the # of buttons is odd
         if len(word_lists) & 1: # if len(word_list) is odd
-            scrollview_layout.add_widget(Button(disabled=True))
+            scrollview_layout.add_widget(Button(disabled=True, background_color=(0, 0, 0, 0)))
 
         self.scrollview.add_widget(scrollview_layout)
 
@@ -704,6 +861,9 @@ class WordsList(Screen):
         self.manager.current = 'add_words'
 
 class SingleList(Screen):
+    search_textbox = ObjectProperty(None)
+
+    # The list name the user selected
     list_name = ObjectProperty(None)
     scrollview = ScrollView()
     word_list = str()
@@ -718,22 +878,10 @@ class SingleList(Screen):
         super().__init__(**kwargs)
         self.main_layout = FloatLayout() # the main floatlayout
 
-        # add the search textbox
-        self.search_textbox = TextInput(pos_hint={"x": 0.1, "top": 0.90},
-            size_hint=(0.8, 0.07), multiline=False)
-
         # lambda inst, val: self.update(val) reads textinput object, string and calls self.update 
         self.search_textbox.bind(text = lambda inst, val: self.update(val))
 
-
-        # add the set as active button
-        btn = Button(pos_hint={"center_x": 0.5, "bottom": 1}, size_hint=(0.4, 0.1), text='set active')
-        btn.bind(on_press=self.set_active)
-
-
         # add everything in the main layout
-        self.main_layout.add_widget(btn)
-        self.main_layout.add_widget(self.search_textbox)
         self.main_layout.add_widget(self.scrollview) # add an empty scrollview in the layout
                      # first so that it doesn't raise an exception when we call `main_layout.remove_widget`
 
@@ -754,9 +902,12 @@ class SingleList(Screen):
     def update(self, prefix: str = ''):
         # re-initialize everything
         self.main_layout.remove_widget(self.scrollview)
-        self.scrollview = ScrollView(pos_hint={"x": 0, "top": 0.8}, size_hint=(1, 0.7))
-        scrollview_layout = GridLayout(size_hint_y=None, size_hint_x=1, 
-            row_force_default=True, row_default_height=50, pos=(0, 0), cols=2)
+
+        self.scrollview = ScrollView(pos_hint={"x": 0.08, "top": 0.8}, size_hint=(0.84, 0.63))
+
+        scrollview_layout = GridLayout(size_hint_y=None, size_hint_x=1, cols=2, 
+            row_force_default=True, row_default_height=100)
+        scrollview_layout.bind(minimum_height=scrollview_layout.setter('height'))
 
         # list of words in this word list
         self.words = word_lists[self.word_list]
@@ -768,11 +919,13 @@ class SingleList(Screen):
             # no need to add another layout here, just set `cols=2` for the GridLayout
 
             # word button, triggers modal view
-            word_btn = Button(text=word, pos_hint={"x": 0, "bottom": 1}, size_hint=(0.9, 1))
+            word_btn = Button(text=word, pos_hint={"x": 0, "bottom": 1}, size_hint=(0.78, 1),
+                background_normal="word.jpg", color=(0, 0, 0, 1))
             word_btn.bind(on_press=self.go_to_word)
 
             # delete button, triggers word deletion
-            delete_btn = Button(text='x', pos_hint={"x": 0.9, "bottom": 1}, size_hint=(0.1, 1))
+            delete_btn = Button(pos_hint={"x": 0.78, "bottom": 1}, size_hint=(0.22, 1), 
+                background_normal="delete.jpg")
             delete_btn.bind(on_press=self.delete_word)
 
             scrollview_layout.add_widget(word_btn)
@@ -828,46 +981,85 @@ class SingleList(Screen):
         modal.open()
 
 class WordModalView(ModalView):
+    main_layout = FloatLayout()
+
     def __init__(self, word: str, **kwargs):
         super().__init__(**kwargs)
-        main_layout = FloatLayout() # main layout 
+        self.word = word # save it as instance variable 
+        self.word_label.text = word
 
-        # word label on the top
-        main_layout.add_widget(Label(text=word, font_size=40,
-            pos_hint={"x": 0.1, "top": 0.9}, size_hint=(0.8, 0.1)))
+        scrollview = ScrollView(pos_hint={"x": 0.05, "top": 0.75}, size_hint=(0.9, 0.7), do_scroll=True)
+
+        scrollview_layout = GridLayout(size_hint_y=None, size_hint_x=1, cols=1, 
+            spacing=50)
+        scrollview_layout.bind(minimum_height=scrollview_layout.setter('height'))
 
         # the 3 meaning labels
         meanings = js['WordList'][word][0] # list of meanings
-        if len(meanings) > 0:
-            label = Label(text=meanings[0], pos_hint={"x": 0.1, "top": 0.8}, 
-                size_hint=(0.8, 0.2), font_size=30) # HOW DO I MAKE IT ALIGN LEFT AHHHHH
-            main_layout.add_widget(label)
+        self.btn_list = list()
 
-        if len(meanings) > 1:
-            label = Label(text=meanings[1], pos_hint={"x": 0.1, "top": 0.6}, 
-                size_hint=(0.8, 0.2), font_size=30)
-            main_layout.add_widget(label)
+        for i in range(len(meanings)):
+            btn = WrappedButton(text=meanings[i], font_size=30, padding=(20, 20),
+                color=(0, 0, 0, 1), background_normal="meaning_label.jpg")
+            btn.size_hint_y = None
+            btn.padding_x = 50
 
-        if len(meanings) > 2:
-            label = Label(text=meanings[2], pos_hint={"x": 0.1, "top": 0.4}, 
-                size_hint=(0.8, 0.2), font_size=30)
-            main_layout.add_widget(label)
+            btn.bind(on_press=self.edit)
+            self.btn_list.append(btn)
+            scrollview_layout.add_widget(btn)
 
-        # the close button
-        close_btn = Button(pos_hint={"x": 0.85, "top":1}, size_hint=(0.15, 0.07))
-        close_btn.bind(on_press=self.dismiss)
-        main_layout.add_widget(close_btn)
+        scrollview.add_widget(scrollview_layout)
+        self.main_layout.add_widget(scrollview)
 
-        self.add_widget(main_layout)
+    def edit(self, btn: Button):
+        # modal view that contains a textinput and a confirm button 
+        self.modal = ModalView(pos_hint={"center_x": 0.5, "center_y": 0.5}, size_hint=(0.8, 0.8))
+        self.modal.background = "word_list_modal.jpg"
+
+        # main layout for the modal view
+        layout = FloatLayout()
+
+        self.modal_txtinpt = TextInput(pos_hint={"x": 0.1, "top": 0.8}, size_hint=(0.8, 0.4), 
+            text=btn.text, background_color=(137/255, 166/255, 215/255))
+        self.modal_confirm_btn = Button(pos_hint={"center_x": 0.5, "top": 0.3}, size_hint=(0.6, 0.1),
+            background_normal = "confirm_change_meaning.jpg")
+
+        self.modal_confirm_btn.bind(on_press = lambda x: self.process(btn))
+
+        # put stuff into the main layout
+        layout.add_widget(self.modal_txtinpt)
+        layout.add_widget(self.modal_confirm_btn)
+
+        # button that dismiss the modal at the top left corner
+        closeBtn = Button(pos_hint={"x":0.82, "top": 0.983}, size_hint=(0.13, 0.065),
+            background_color=(0, 0, 0, 0))
+        closeBtn.bind(on_press=self.modal.dismiss)
+        layout.add_widget(closeBtn)
+
+        self.modal.add_widget(layout)
+        self.modal.bind(on_dismiss=self.save_new_defs)
+
+        # open the modal view
+        self.modal.open()
+
+    def process(self, btn: Button):
+        if len(self.modal_txtinpt.text) != 0:
+            btn.text = self.modal_txtinpt.text
+            self.modal.dismiss()
+    
+    def save_new_defs(self, modal: ModalView):
+        for i in range(len(self.btn_list)):
+            js['WordList'][self.word][0][i] = self.btn_list[i].text
 
 class Dictionary(Screen):
     search_textbox = ObjectProperty(None)
     search_button = ObjectProperty(None)
     target_word = ObjectProperty(None)
     word_missing = ObjectProperty(None)
-    meaning1 = ObjectProperty(None)
-    meaning2 = ObjectProperty(None)
-    meaning3 = ObjectProperty(None)
+
+    meaning_labels = list()
+    # meaning layout
+    meanings_layout = ObjectProperty(None)
 
     """
     `Dictionary.update()`
@@ -878,11 +1070,14 @@ class Dictionary(Screen):
     """
     def update(self):
         # set the 'word missing' label to invisible
+        self.search_textbox.text = ''
         self.word_missing.text = ''
         self.target_word.text = ''
-        self.meaning1.text = ''
-        self.meaning2.text = ''
-        self.meaning3.text = ''
+
+        # clear all meanings
+        for label in self.meaning_labels:
+            self.meanings_layout.remove_widget(label)
+        self.meaning_labels.clear()
 
     """
     `Dictionary.show()`
@@ -893,16 +1088,15 @@ class Dictionary(Screen):
     4. Otherwise, set the meaning labels to visible
     """
     def show(self):
-        self.update()
-
         # word that the user inputted
         text_input = self.search_textbox.text
+        self.update()
 
         # if input is empty, just ignore
         if len(text_input) == 0:
             return
 
-        word = text_input.strip().lower()
+        word = text_input.strip()
 
         # find the word in the js file, get(word) == None is when the word doesn't exist
         if js['WordList'].get(word) == None:
@@ -910,79 +1104,192 @@ class Dictionary(Screen):
         else:
             self.target_word.text = word
             meanings = js['WordList'][word][0] # list of meanings
-            # set the 3 meanings
-            if len(meanings) > 0:
-                self.meaning1.text = meanings[0]
-            if len(meanings) > 1:
-                self.meaning2.text = meanings[1]
-            if len(meanings) > 2:
-                self.meaning3.text = meanings[2]
+            for i in range(len(meanings)):
+                # Actually a button since label doesn't have background_normal
+                lbl = WrappedButton(text=meanings[i], font_size=30, padding=(20, 20), 
+                    disabled_color=(0, 0, 0, 1), background_disabled_normal="meaning_label.jpg")
+                lbl.disabled = True
+                lbl.size_hint_y = None
+                lbl.padding_x = 50
 
-class Notice(Popup):
-    # popup when the user cancels or save
-    def __init__(self, kind, widget, **kwargs):
-        super().__init__(**kwargs)
-        self.widget = widget
-        self.content = FloatLayout()
+                self.meaning_labels.append(lbl)
+                self.meanings_layout.add_widget(lbl)
 
-        # if the user wants to save it
-        if kind == 'save':
-            text = 'Your words has been saved'
-            self.btn = Button(text='close', pos_hint={
-                              "x": 0.3, "top": 0.3}, size_hint=(0.4, 0.25), font_size=30)
-            self.btn.bind(on_press=self.dismiss)
-            self.content.add_widget(self.btn)
-        # if the user wants to cancel
-        else:
-            text = 'Are you sure to cancel?'
-            self.yes = Button(text='Yes', pos_hint={
-                              "x": 0.1, "top": 0.3}, size_hint=(0.3, 0.2))
-            self.no = Button(text='No', pos_hint={
-                             "x": 0.6, "top": 0.3}, size_hint=(0.3, 0.2))
-            self.content.add_widget(self.yes)
-            self.content.add_widget(self.no)
-            self.yes.bind(on_press=self.press)
-            self.no.bind(on_press=self.dismiss)
-
-        self.content.add_widget(Label(text=text, pos_hint={"x": 0.15, "top": 0.95},
-                                      size_hint=(0.7, 0.1)))
-        self.title = 'Notice'
-        self.size_hint = (0.5, 0.35)
-        self.pos_hint = {"x": 0.25, "top": 0.75}
-
-    def press(self, *args):
-        # clears text if cancel pressed
-        self.widget.update()
-        self.dismiss()
-
-class InputError(Popup):
-    # popup for if input is incorrect for adding a word
-    def __init__(self, text, **kwargs):
-        super().__init__(**kwargs)
-        self.content = FloatLayout()
-        self.label = Label(text=text, pos_hint={
-                           "x": 0.1, "top": 0.9}, size_hint=(0.8, None), font_size=30)
-        self.content.add_widget(self.label)
-        self.btn = Button(text='Close', pos_hint={
-                          "x": 0.35, "top": 0.25}, size_hint=(0.3, 0.2))
-        self.btn.bind(on_press=self.close)
-        self.content.add_widget(self.btn)
-        self.title = 'Error'
-        self.pos_hint = {"x": 0.25, "top": 0.75}
-        self.size_hint = (0.5, 0.35)
-
-    def close(self, *args):
-        self.dismiss()
-
-
-# add windows
-screen_manager = ScreenManager()
+# add screens
 screen_manager.add_widget(Main(name="main_screen"))
 screen_manager.add_widget(AddWords(name="add_words"))
 screen_manager.add_widget(WordsList(name="words_list"))
 screen_manager.add_widget(SingleList(name='single_list'))
 screen_manager.add_widget(Dictionary(name="dictionary"))
 
+class Notice(ModalView):
+    screen = screen_manager.get_screen('add_words')
+
+class UserProfile(ModalView):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        username = js['User']['name']
+
+        main_layout = FloatLayout()
+        main_layout.add_widget(Label(text=username, pos_hint={"x": 0.1, "top": 0.95}, 
+            size_hint=(0.8, 0.1)))
+
+        learned = []
+        familiar = []
+        to_learn = []
+
+        for word in js['WordList']:
+            # avoid division by 0
+            correct_percentage = 0 if js['WordList'][word][2] == 0 \
+                else js['WordList'][word][1] / js['WordList'][word][2]
+
+            if correct_percentage > LEARNED_THRESHOLD:
+                learned.append(word)
+            elif correct_percentage > FAMILIAR_THRESHOLD:
+                familiar.append(word)
+            else:
+                to_learn.append(word)
+        
+        # 3 labels
+        main_layout.add_widget(Label(text="learned\n{}".format(len(learned)), 
+            pos_hint = {"x": 0.05, "top": 0.8}, size_hint = (0.25, 0.1)))
+        main_layout.add_widget(Label(text="familiar\n{}".format(len(familiar)),
+            pos_hint = {"x": 0.35, "top": 0.8}, size_hint = (0.25, 0.1)))
+        main_layout.add_widget(Label(text="to learn\n{}".format(len(to_learn)),
+            pos_hint = {"x": 0.65, "top": 0.8}, size_hint = (0.25, 0.1)))
+
+    
+        # daily progress CPB
+        daily_progress = CircularProgressBar()
+        daily_progress.pos = (100, 550)
+        daily_progress.thickness = 10
+        daily_progress.cap_style = "square"
+
+        total_answered = total_question_answered
+
+        for login in js['Login info']['all logins']:
+            timelist = time.localtime()[:4]
+            login_time = login[0]
+
+            # if the login is within one day
+            if login_time[2] == timelist[2] and login_time[1] == timelist[1] and login_time[0] == timelist[0]:
+                # login[2] is the total number of questions answered
+                total_answered += login[2]
+
+        daily_progress.max = js['User']['goal']
+        daily_progress.value = min(daily_progress.max, total_answered)
+
+        main_layout.add_widget(daily_progress)
+        main_layout.add_widget(Label(text=str(total_answered), font_size=35, 
+            pos_hint={"x": 0.5, "top": 0.65}, size_hint=(0.5, 0.1)))
+        main_layout.add_widget(Label(text=str(daily_progress.max), font_size=35,
+            pos_hint={"x": 0.5, "top": 0.55}, size_hint=(0.5, 0.1)))
+
+
+        scrollview = ScrollView(pos_hint={"x": 0, "top": 0.4}, size_hint=(1, 0.4), do_scroll=True)
+        scrollview_layout = GridLayout(rows=1, pos_hint={"x": 0, "bottom": 0},  size_hint_x=None, 
+            col_force_default = True, col_default_width = 300)
+        scrollview_layout.bind(minimum_height=scrollview_layout.setter('height'))
+
+        for word_list in word_lists:
+            total_answered = 0
+            answered_correct = 0
+            for word in word_lists[word_list]:
+                answered_correct += js['WordList'][word][1]
+                total_answered += js['WordList'][word][2]
+
+            cpb = Button()
+            cpb.text = str("{} / {}".format(answered_correct, total_answered))
+            scrollview_layout.add_widget(cpb)
+
+        scrollview.add_widget(scrollview_layout)
+        main_layout.add_widget(scrollview)
+        self.add_widget(main_layout)
+        
+class Settings(ModalView):
+    main_layout = FloatLayout()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        username = Button(text=js['User']['name'], font_size=40, color=(0, 0, 0, 1),
+            pos_hint={"x": 0.05, "top": 0.9}, size_hint=(0.9, 0.1), background_color=(0, 0, 0, 0))
+        username.bind(on_press=self.edit)
+
+        self.main_layout.add_widget(username)
+
+
+        light_mode = ToggleButton(text='Light', group='mode', background_color=(92/255, 103/255, 204/255, 0.5),
+            pos_hint={"x": 0.3, "top": 0.75}, size_hint=(0.2, 0.05))
+        light_mode.bind(on_press=self.change_mode)
+
+        dark_mode = ToggleButton(text='Dark', group='mode', background_color=(92/255, 103/255, 204/255, 0.5),
+            pos_hint={"x": 0.5, "top": 0.75}, size_hint=(0.2, 0.05), color=(0, 0, 0, 1))
+        dark_mode.bind(on_press=self.change_mode)
+
+        if js['User']['mode'] == 'light':
+            light_mode.state = "down"
+        else:
+            dark_mode.state = "down"
+
+        self.main_layout.add_widget(light_mode)
+        self.main_layout.add_widget(dark_mode)
+        
+
+        daily_goal = Button(text="Daily goal: {}".format(js['User']['goal']), halign='left', color=(0, 0, 0, 1), font_size=35,
+            valign='middle', pos_hint={"x": 0.05, "top": 0.65}, size_hint=(0.9, 0.1), background_color=(0, 0, 0, 0))
+        daily_goal.bind(size=daily_goal.setter('text_size'))    
+        daily_goal.halign='center'
+        daily_goal.bind(on_press=self.edit)
+
+        self.main_layout.add_widget(daily_goal)
+
+    def edit(self, btn: Button):
+        # modal view that contains a textinput and a confirm button 
+        self.modal = ModalView(pos_hint={"center_x": 0.5, "center_y": 0.5}, size_hint=(0.8, 0.8))
+        # main layout for the modal view
+        layout = FloatLayout()
+
+        self.modal_txtinpt = TextInput(pos_hint={"x": 0.1, "top": 0.8}, size_hint=(0.8, 0.2))
+        self.modal_confirm_btn = Button(pos_hint={"center_x": 0.5, "top": 0.3}, size_hint=(0.6, 0.1), text='confirm')
+
+        self.modal_confirm_btn.bind(on_press=lambda x: self.process(btn))
+
+        # put stuff into the main layout
+        layout.add_widget(self.modal_txtinpt)
+        layout.add_widget(self.modal_confirm_btn)
+
+        # button that dismiss the modal at the top left corner
+        closeBtn = Button(pos_hint={"x":0.85, "top": 1}, size_hint=(0.15, 0.07), text='x')
+        closeBtn.bind(on_press=self.modal.dismiss)
+        layout.add_widget(closeBtn)
+
+        self.modal.add_widget(layout)
+
+        # open the modal view
+        self.modal.open()
+
+    def process(self, btn: Button):
+        if btn.text[:12] == 'Daily goal: ':
+            try:
+                int(self.modal_txtinpt.text.strip())
+            except ValueError:
+                None 
+            finally:
+                goal = int(self.modal_txtinpt.text.strip())
+                js['User']['goal'] = goal
+                btn.text = btn.text[: 12] + str(goal)
+                self.modal.dismiss()
+        else:
+            name = self.modal_txtinpt.text.strip()
+            if len(name) != 0:
+                js['User']['name'] = name
+                btn.text = name
+                self.modal.dismiss()
+
+    def change_mode(self, btn: Button):
+        print("Current Mode:", btn.text)
+        js['User']['mode'] = btn.text.lower()
 
 class Vocabulary_LearnerApp(App):
     def build(self):
@@ -993,15 +1300,24 @@ class Vocabulary_LearnerApp(App):
 
         generate_word_lists()
 
+        # current word list to practice
+        current_list = js['User']['list']
+        # users can delete an active list, so now the list either exists or is an empty str
+        if len(word_lists[current_list]) == 0:
+            js['User']['list'] = ''
+        screen_manager.get_screen('main_screen').list_to_practice = js['User']['list']
+
         # remove logins past 1 week
 
         all_logins = js['Login info']['all logins'] # a list of all logins
         # all_logins is a reference
 
-        today = time.localtime()[2]
+        # year, month, day, hour
+        timelist = time.localtime()[:4]
 
         # early logins appears first
-        while len(all_logins) > 0 and all_logins[0][0][2] < today - 7: # BUG: 2020/25, 2021/27
+        while len(all_logins) > 0 and all_logins[0][0][2] < timelist[2] - 7 \
+            or all_logins[0][0][1] != timelist[1] or all_logins[0][0][0] != timelist[0]:
             all_logins.pop(0)
 
         # switch to Main Screen, call update()
@@ -1015,13 +1331,14 @@ class Vocabulary_LearnerApp(App):
         js["Login info"]["last login"] = loginfo
         js["Login info"]["all logins"].append(loginfo)
 
+        js['User']['list'] = screen_manager.get_screen('main_screen').list_to_practice
+
         # save score
         file = open('Vocabulary_Words.json', 'w')
         json.dump(js, file, indent=4)
         file.close()
-        print('saved')
+        print('Thanks for using my App, bye!')
 
 
 if __name__ == '__main__':
-    Window.clearcolor = (179/255, 1, 1, 0)
     Vocabulary_LearnerApp().run()
