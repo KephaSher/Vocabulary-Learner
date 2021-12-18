@@ -1,0 +1,22 @@
+{
+    "User": {
+        "name": "Enter name",
+        "goal": 1,
+        "mode": "dark",
+        "list": ""
+    },
+    "Login info": {
+        "last login": [
+            
+        ],
+        "all logins": [
+            
+        ]
+    },
+    "WordList": {
+        
+    },
+    "LearnedWords": {
+        
+    }
+}
