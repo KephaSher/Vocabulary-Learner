@@ -536,6 +536,8 @@ class AddWords(Screen):
 
     """
     `AddWords.__init__(**kwargs)`
+
+    Creates the add meaning button
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -544,7 +546,7 @@ class AddWords(Screen):
 
         # Button to add a new MeaningInput
         self.add_meaning_btn = Button(size_hint_y = None, height = 95,
-            background_normal="add_meaning2.jpg")
+            background_normal="add_meaning.jpg")
 
         self.add_meaning_btn.bind(on_press=self.add_new_meaningInput)
 
@@ -1349,6 +1351,7 @@ class Settings(ModalView):
     1. Changes information based on which button is pressed
     """
     def process(self, btn: Button):
+        # change daily goal
         if btn.text[:12] == 'Daily goal: ':
             str_to_check = self.modal_txtinpt.text.strip()
             if self.modal_txtinpt.text[:12] == 'Daily goal: ':
@@ -1360,9 +1363,11 @@ class Settings(ModalView):
                 None 
             finally:
                 goal = int(str_to_check)
-                js['User']['goal'] = goal
-                btn.text = btn.text[: 12] + str(goal)
-                self.modal.dismiss()
+                if goal > 0:
+                    js['User']['goal'] = goal
+                    btn.text = btn.text[: 12] + str(goal)
+                    self.modal.dismiss()
+        # change username
         else:
             name = self.modal_txtinpt.text.strip()
             if len(name) != 0:
@@ -1403,9 +1408,13 @@ class Vocabulary_LearnerApp(App):
         timelist = time.localtime()[:4]
 
         # early logins appears first
-        while len(all_logins) > 0 and all_logins[0][0][2] < timelist[2] - 7 \
-            or all_logins[0][0][1] != timelist[1] or all_logins[0][0][0] != timelist[0]:
-            all_logins.pop(0)
+        print(len(all_logins))
+        while len(all_logins) > 0:
+            if all_logins[0][0][2] < timelist[2] - 7 \
+                or all_logins[0][0][1] != timelist[1] or all_logins[0][0][0] != timelist[0]:
+                all_logins.pop(0)
+            else: 
+                break
 
         # switch to Main Screen, call update()
         screen_manager.get_screen('main_screen').update()
