@@ -214,15 +214,15 @@ class Main(Screen):
         # -------------------------------
         
         # user is a list of first, last name
-        username = js['User']["name"].split()
+        username = js['User']["name"]
 
         hour = time.localtime()[3]
         if hour > 7 and hour < 13:
-            self.profile_btn.text = "Good Morning, " + username[0]
+            self.profile_btn.text = "Good Morning, " + username
         elif hour > 12 and hour < 19:
-            self.profile_btn.text = "Good Afternoon, " + username[0]
+            self.profile_btn.text = "Good Afternoon, " + username
         else:
-            self.profile_btn.text = "Good Evening, " + username[0]
+            self.profile_btn.text = "Good Evening, " + username
 
         if self.play_valid():
             # set the label of the current list
@@ -490,6 +490,9 @@ class Main(Screen):
         modal.open()
 
 class AddWords(Screen):
+    """
+    A meaning textbox that the user can create by pressing the add meaning input button
+    """
     class MeaningInput(TextInput):
         def __init__(self, **kwargs):
             super().__init__(**kwargs)
@@ -538,11 +541,23 @@ class AddWords(Screen):
         super().__init__(**kwargs)
         # word list the current word is in
         self.word_list = str()
+
+        # Button to add a new MeaningInput
         self.add_meaning_btn = Button(size_hint_y = None, height = 95,
             background_normal="add_meaning2.jpg")
+
         self.add_meaning_btn.bind(on_press=self.add_new_meaningInput)
+
         self.update()
     
+    """
+    `AddWords.add_new_meaningInput()`
+    Called when user presses the add meaning input button
+    
+    1. Removes `self.add_meaning_btn` so that the added MeaningInput goes first
+    2. Adds another meaningInput into the gridlayout and self.meaningInputs list
+    3. Adds `self.add_nmeaning_btn` back
+    """
     def add_new_meaningInput(self, btn: Button):
         self.meanings_layout.remove_widget(self.add_meaning_btn)
         self.meaningInputs.append(self.MeaningInput())
@@ -740,13 +755,20 @@ class AddWords(Screen):
     """
     def cancel_pressed(self):
         self.open_modal("Cancelled")
-        
+    
+    """
+    Function that opens the modal view that displays `self.message`
+    The modalview flashes for 0.5 secs
+    """
     def open_modal(self, message: str):
         self.message = message
         modal = Notice()
         modal.bind(on_open=self.close_modal)
         modal.open()
 
+    """
+    Function that closes the modal view
+    """
     def close_modal(self, modal):
         # pause for 0.5 seconds to let the user see the message
         time.sleep(0.5)
@@ -983,6 +1005,11 @@ class SingleList(Screen):
 class WordModalView(ModalView):
     main_layout = FloatLayout()
 
+    """
+    `self.WordModalView.__init__`
+
+    1. Adds meanings to a scrollview, the rest is in the kv
+    """
     def __init__(self, word: str, **kwargs):
         super().__init__(**kwargs)
         self.word = word # save it as instance variable 
@@ -1011,6 +1038,13 @@ class WordModalView(ModalView):
         scrollview.add_widget(scrollview_layout)
         self.main_layout.add_widget(scrollview)
 
+    """
+    `WordModalView.edit`
+    Called when a meaning is pressed
+    
+    1. Creates another modalview that lets user enter the new meaning
+    2. Changes meaning in the hs file
+    """
     def edit(self, btn: Button):
         # modal view that contains a textinput and a confirm button 
         self.modal = ModalView(pos_hint={"center_x": 0.5, "center_y": 0.5}, size_hint=(0.8, 0.8))
@@ -1019,8 +1053,11 @@ class WordModalView(ModalView):
         # main layout for the modal view
         layout = FloatLayout()
 
+        # text input for the user to enter
         self.modal_txtinpt = TextInput(pos_hint={"x": 0.1, "top": 0.8}, size_hint=(0.8, 0.4), 
             text=btn.text, background_color=(137/255, 166/255, 215/255))
+
+        # confirm button
         self.modal_confirm_btn = Button(pos_hint={"center_x": 0.5, "top": 0.3}, size_hint=(0.6, 0.1),
             background_normal = "confirm_change_meaning.jpg")
 
@@ -1037,16 +1074,29 @@ class WordModalView(ModalView):
         layout.add_widget(closeBtn)
 
         self.modal.add_widget(layout)
+        # When the modal is dismissed, call self.save_new_defs
         self.modal.bind(on_dismiss=self.save_new_defs)
 
         # open the modal view
         self.modal.open()
 
+    """
+    `WordModalView.process(btn: Button)`
+    Binded to confirm button
+
+    1. Changes the text of the button to the text in the text input if it is not empty
+    """
     def process(self, btn: Button):
         if len(self.modal_txtinpt.text) != 0:
             btn.text = self.modal_txtinpt.text
             self.modal.dismiss()
-    
+
+    """
+    `WordModalView.save_new_defs(btn: Button)`
+    Binded to on_dismiss of the modal
+
+    1. Saves the text to the js file
+    """
     def save_new_defs(self, modal: ModalView):
         for i in range(len(self.btn_list)):
             js['WordList'][self.word][0][i] = self.btn_list[i].text
@@ -1208,10 +1258,17 @@ class UserProfile(ModalView):
         self.add_widget(main_layout)
         
 class Settings(ModalView):
+    main_screen = screen_manager.get_screen('main_screen')
     main_layout = FloatLayout()
+    """
+    `Settings.__init__(**kwargs)`
+    Creates all the GUI, no kv
+
+    """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+        # Username button
         username = Button(text=js['User']['name'], font_size=40, color=(0, 0, 0, 1),
             pos_hint={"x": 0.05, "top": 0.9}, size_hint=(0.9, 0.1), background_color=(0, 0, 0, 0))
         username.bind(on_press=self.edit)
@@ -1219,6 +1276,7 @@ class Settings(ModalView):
         self.main_layout.add_widget(username)
 
 
+        # light/dark mode
         light_mode = ToggleButton(text='Light', group='mode', background_color=(92/255, 103/255, 204/255, 0.5),
             pos_hint={"x": 0.3, "top": 0.75}, size_hint=(0.2, 0.05))
         light_mode.bind(on_press=self.change_mode)
@@ -1236,6 +1294,7 @@ class Settings(ModalView):
         self.main_layout.add_widget(dark_mode)
         
 
+        # daily goal
         daily_goal = Button(text="Daily goal: {}".format(js['User']['goal']), halign='left', color=(0, 0, 0, 1), font_size=35,
             valign='middle', pos_hint={"x": 0.05, "top": 0.65}, size_hint=(0.9, 0.1), background_color=(0, 0, 0, 0))
         daily_goal.bind(size=daily_goal.setter('text_size'))    
@@ -1244,23 +1303,37 @@ class Settings(ModalView):
 
         self.main_layout.add_widget(daily_goal)
 
+    """
+    `Settings.edit(btn: Button)`
+    Called when the user presses one of the buttons
+
+    1. Creates a modal for the user to enter new infos (same with the WordModalView)
+    """
     def edit(self, btn: Button):
         # modal view that contains a textinput and a confirm button 
         self.modal = ModalView(pos_hint={"center_x": 0.5, "center_y": 0.5}, size_hint=(0.8, 0.8))
+        self.modal.background = "word_list_modal.jpg"
+
         # main layout for the modal view
         layout = FloatLayout()
 
-        self.modal_txtinpt = TextInput(pos_hint={"x": 0.1, "top": 0.8}, size_hint=(0.8, 0.2))
-        self.modal_confirm_btn = Button(pos_hint={"center_x": 0.5, "top": 0.3}, size_hint=(0.6, 0.1), text='confirm')
+        # text input for the user to enter
+        self.modal_txtinpt = TextInput(pos_hint={"x": 0.1, "top": 0.8}, size_hint=(0.8, 0.4), 
+            text=btn.text, background_color=(137/255, 166/255, 215/255))
 
-        self.modal_confirm_btn.bind(on_press=lambda x: self.process(btn))
+        # confirm button
+        self.modal_confirm_btn = Button(pos_hint={"center_x": 0.5, "top": 0.3}, size_hint=(0.6, 0.1),
+            background_normal = "confirm_change_meaning.jpg")
+
+        self.modal_confirm_btn.bind(on_press = lambda x: self.process(btn))
 
         # put stuff into the main layout
         layout.add_widget(self.modal_txtinpt)
         layout.add_widget(self.modal_confirm_btn)
 
         # button that dismiss the modal at the top left corner
-        closeBtn = Button(pos_hint={"x":0.85, "top": 1}, size_hint=(0.15, 0.07), text='x')
+        closeBtn = Button(pos_hint={"x":0.82, "top": 0.983}, size_hint=(0.13, 0.065),
+            background_color=(0, 0, 0, 0))
         closeBtn.bind(on_press=self.modal.dismiss)
         layout.add_widget(closeBtn)
 
@@ -1269,14 +1342,24 @@ class Settings(ModalView):
         # open the modal view
         self.modal.open()
 
+    """
+    `Settings.process(btn: Button)`
+    Called when user presses the confirm button
+
+    1. Changes information based on which button is pressed
+    """
     def process(self, btn: Button):
         if btn.text[:12] == 'Daily goal: ':
+            str_to_check = self.modal_txtinpt.text.strip()
+            if self.modal_txtinpt.text[:12] == 'Daily goal: ':
+                str_to_check = self.modal_txtinpt.text[12:].strip()
+
             try:
-                int(self.modal_txtinpt.text.strip())
+                int(str_to_check)
             except ValueError:
                 None 
             finally:
-                goal = int(self.modal_txtinpt.text.strip())
+                goal = int(str_to_check)
                 js['User']['goal'] = goal
                 btn.text = btn.text[: 12] + str(goal)
                 self.modal.dismiss()
@@ -1287,6 +1370,10 @@ class Settings(ModalView):
                 btn.text = name
                 self.modal.dismiss()
 
+    """
+    `Settings.change_mode`
+    Called when the toggle button (light/dark mode) is pressed, currently not doing anything
+    """
     def change_mode(self, btn: Button):
         print("Current Mode:", btn.text)
         js['User']['mode'] = btn.text.lower()
