@@ -1,4 +1,4 @@
-# Vocabulary-Learner
+# Vocabulary Learner
 A simple vocabulary app in which you can:
 1. Practice your vocabulary by doing multiple choice questions
 2. Create customized word lists and words
