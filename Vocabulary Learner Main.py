@@ -292,6 +292,7 @@ class Main(Screen):
         # ---------------------------- Pick New Word -----------------------------
         word_list = word_lists[self.list_to_practice]
 
+        # used for recommendation algorithm (not yet implemented)
         learned = []
         familiar = []
         to_learn = []
@@ -309,35 +310,7 @@ class Main(Screen):
         # selects the correct word `self.wordName`
         # ----------------------------------------
 
-        # the most basic recommendation algorithm... 
-        # 80% to_learn, 20% familiar, 10% learned
-        random_number = randint(1, 10)
-
-        if len(to_learn) > 0 and len(familiar) > 0 and len(learned) > 0:
-            if random_number < 8: 
-                self.wordName = to_learn[randint(0, len(to_learn) - 1)]
-            elif random_number < 10:
-                self.wordName = familiar[randint(0, len(familiar) - 1)]
-            else:
-                self.wordName = learned[randint(0, len(learned) - 1)]
-        elif len(to_learn) == 0:
-            if random_number < 7:
-                self.wordName = familiar[randint(0, len(familiar) - 1)]
-            else:
-                self.wordName = learned[randint(0, len(learned) - 1)]
-        elif len(familiar) == 0:
-            if random_number < 9:
-                self.wordName = to_learn[randint(0, len(to_learn) - 1)]
-            else:
-                self.wordName = learned[randint(0, len(learned) - 1)]
-        elif len(learned) == 0:
-            if random_number < 7:
-                self.wordName = to_learn[randint(0, len(to_learn) - 1)]
-            else:
-                self.wordName = familiar[randint(0, len(familiar) - 1)]
-        else:
-            self.wordName = word_list[randint(0, len(word_list) - 1)]
-
+        self.wordName = word_list[randint(0, len(word_list) - 1)]
 
         # sets the main word label on the top
         self.word.text = self.wordName
@@ -648,7 +621,7 @@ class AddWords(Screen):
 
         self.modal_confirm_btn = Button(pos_hint={"center_x": 0.5, "top": 0.3}, size_hint=(0.6, 0.1),
             background_normal = "add_list.jpg")
-        self.modal_confirm_btn.bind(on_press = lambda x: self.add_new_list)
+        self.modal_confirm_btn.bind(on_press=self.add_new_list)
 
         # put stuff into the main layout
         layout.add_widget(self.modal_txtinpt)
@@ -941,12 +914,12 @@ class SingleList(Screen):
             # no need to add another layout here, just set `cols=2` for the GridLayout
 
             # word button, triggers modal view
-            word_btn = Button(text=word, pos_hint={"x": 0, "bottom": 1}, size_hint=(0.78, 1),
+            word_btn = Button(text=word, pos_hint={"x": 0, "bottom": 1}, size_hint=(0.8, 1),
                 background_normal="word.jpg", color=(0, 0, 0, 1))
             word_btn.bind(on_press=self.go_to_word)
 
             # delete button, triggers word deletion
-            delete_btn = Button(pos_hint={"x": 0.78, "bottom": 1}, size_hint=(0.22, 1), 
+            delete_btn = Button(pos_hint={"x": 0.78, "bottom": 1}, size_hint=(0.2, 1), 
                 background_normal="delete.jpg")
             delete_btn.bind(on_press=self.delete_word)
 
@@ -1176,15 +1149,82 @@ class Notice(ModalView):
     screen = screen_manager.get_screen('add_words')
 
 class UserProfile(ModalView):
+    main_layout = FloatLayout()
+    cpb = ObjectProperty(None)
+    learned = ObjectProperty(None)
+    familiar = ObjectProperty(None)
+    to_learn = ObjectProperty(None)
+    done = ObjectProperty(None)
+    goal = ObjectProperty(None)
+    username = ObjectProperty(None)
+    scrollview_layout = ObjectProperty(None)
+
+    """
+    `UserProfile.__init__(**kwargs)`
+
+    1. Creates the scrollview that includes stats of every word list
+    """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        username = js['User']['name']
+        self.cpb.value += 1 # buggy code...
+        self.cpb.value -= 1
+    
+        for word_list in word_lists:
+            # get the stats from the json file
+            total_answered = 0
+            answered_correct = 0
+            for word in word_lists[word_list]:
+                answered_correct += js['WordList'][word][1]
+                total_answered += js['WordList'][word][2]
 
-        main_layout = FloatLayout()
-        main_layout.add_widget(Label(text=username, pos_hint={"x": 0.1, "top": 0.95}, 
-            size_hint=(0.8, 0.1)))
+            layout = FloatLayout(size_hint_y=None, height=132.5)
 
+            # the button for background, covers the entire screen
+            btn = Button(pos_hint={"x": 0, "top": 1}, size_hint=(1, 1), disabled=True,
+                background_disabled_normal="user_profile_list.jpg")
+            layout.add_widget(btn)
+            
+            # name of the word list
+            lbl = Label(pos_hint={"x": 0.089, "top": 0.762}, size_hint=(0.58, 0.24), 
+                text=word_list, font_size=25, color=(0, 0, 0, 1), halign='left')
+            lbl.bind(size=lbl.setter('text_size'))
+
+            layout.add_widget(lbl)
+
+            # avoid division by 0
+            if total_answered == 0: correct_p = 0
+            else: correct_p = answered_correct / total_answered
+
+            # progress bar made by buttons
+            btn_left = Button(pos_hint={"x": 0.089, "top": 0.438}, disabled=True,
+                size_hint=(0.55 * correct_p, 0.08), background_disabled_normal="dark_blue.jpg")
+            btn_right = Button(pos_hint={"x": 0.089 + 0.55 * correct_p, "top": 0.438}, disabled=True,
+                size_hint=(0.55 * (1 - correct_p), 0.08), background_disabled_normal="light_blue.jpg")
+
+            # weird things happen when correct_p = 0 (the button still gets shown)
+            if correct_p > 0:
+                layout.add_widget(btn_left)
+            layout.add_widget(btn_right)
+
+            # Correct percentage
+            lbl = Label(pos_hint={"x": 0.73, "top": 0.59}, size_hint=(0.15, 0.21), 
+                text=str(round(correct_p * 100)) + "%", color=(0, 0, 0, 1), font_size=25)
+
+            layout.add_widget(lbl)
+
+            self.scrollview_layout.add_widget(layout)
+
+
+    """
+    `UserProfile.update()`
+    Called when the modal is initialized. Called by the username label in the kv.
+
+    1. Creates learned (list), familiar (list), and to_learn (list)
+    2. Sets up the CPB of done/goal
+    """
+    # this will be called by the username label, but it will update everything
+    def update(self):
         learned = []
         familiar = []
         to_learn = []
@@ -1201,22 +1241,13 @@ class UserProfile(ModalView):
             else:
                 to_learn.append(word)
         
-        # 3 labels
-        main_layout.add_widget(Label(text="learned\n{}".format(len(learned)), 
-            pos_hint = {"x": 0.05, "top": 0.8}, size_hint = (0.25, 0.1)))
-        main_layout.add_widget(Label(text="familiar\n{}".format(len(familiar)),
-            pos_hint = {"x": 0.35, "top": 0.8}, size_hint = (0.25, 0.1)))
-        main_layout.add_widget(Label(text="to learn\n{}".format(len(to_learn)),
-            pos_hint = {"x": 0.65, "top": 0.8}, size_hint = (0.25, 0.1)))
+        self.learned.text = str(len(learned))
+        self.familiar.text = str(len(familiar))
+        self.to_learn.text = str(len(to_learn))
 
-    
-        # daily progress CPB
-        daily_progress = CircularProgressBar()
-        daily_progress.pos = (100, 550)
-        daily_progress.thickness = 10
-        daily_progress.cap_style = "square"
-
-        total_answered = total_question_answered
+        # only count correct answers, since if we count incorrect ones 
+        # a question can produce 4 tries
+        total_answered = total_question_answered_correct
 
         for login in js['Login info']['all logins']:
             timelist = time.localtime()[:4]
@@ -1225,37 +1256,16 @@ class UserProfile(ModalView):
             # if the login is within one day
             if login_time[2] == timelist[2] and login_time[1] == timelist[1] and login_time[0] == timelist[0]:
                 # login[2] is the total number of questions answered
-                total_answered += login[2]
+                total_answered += login[1]
 
-        daily_progress.max = js['User']['goal']
-        daily_progress.value = min(daily_progress.max, total_answered)
+        self.done.text = str(total_answered)
+        self.goal.text = str(js['User']['goal'])
 
-        main_layout.add_widget(daily_progress)
-        main_layout.add_widget(Label(text=str(total_answered), font_size=35, 
-            pos_hint={"x": 0.5, "top": 0.65}, size_hint=(0.5, 0.1)))
-        main_layout.add_widget(Label(text=str(daily_progress.max), font_size=35,
-            pos_hint={"x": 0.5, "top": 0.55}, size_hint=(0.5, 0.1)))
+        self.cpb.max = max(1, js['User']['goal'])
+        self.cpb.value = total_answered
 
-
-        scrollview = ScrollView(pos_hint={"x": 0, "top": 0.4}, size_hint=(1, 0.4), do_scroll=True)
-        scrollview_layout = GridLayout(rows=1, pos_hint={"x": 0, "bottom": 0},  size_hint_x=None, 
-            col_force_default = True, col_default_width = 300)
-        scrollview_layout.bind(minimum_height=scrollview_layout.setter('height'))
-
-        for word_list in word_lists:
-            total_answered = 0
-            answered_correct = 0
-            for word in word_lists[word_list]:
-                answered_correct += js['WordList'][word][1]
-                total_answered += js['WordList'][word][2]
-
-            cpb = Button()
-            cpb.text = str("{} / {}".format(answered_correct, total_answered))
-            scrollview_layout.add_widget(cpb)
-
-        scrollview.add_widget(scrollview_layout)
-        main_layout.add_widget(scrollview)
-        self.add_widget(main_layout)
+        # remember this is called by the username label so return the text
+        return js['User']['name']
         
 class Settings(ModalView):
     main_screen = screen_manager.get_screen('main_screen')
@@ -1406,7 +1416,6 @@ class Vocabulary_LearnerApp(App):
         timelist = time.localtime()[:4]
 
         # early logins appears first
-        print(len(all_logins))
         while len(all_logins) > 0:
             if all_logins[0][0][2] < timelist[2] - 7 \
                 or all_logins[0][0][1] != timelist[1] or all_logins[0][0][0] != timelist[0]:
