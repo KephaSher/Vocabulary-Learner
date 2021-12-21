@@ -238,7 +238,7 @@
             pos_hint: {"x": 0.1, "top": 0.819}
             size_hint: 0.8, 0.086
             color: 0, 0, 0, 1
-            font_size: self.width * 0.07
+            font_size: 30 if len(self.text) > 15 else 40
 
         ScrollView:
             do_scroll: True
@@ -719,6 +719,7 @@
             pos_hint: {"x": 0.15, "top": 0.911}
             size_hint: (0.7, 0.08)
             multiline: False
+            hint_text: "Search for a word"
             background_color: (0, 0, 0, 0)
 
         Button:
@@ -821,3 +822,161 @@
             size_hint: 0.131, 0.061
             on_press: root.dismiss()
             background_color: 0, 0, 0, 0
+
+<UserProfile>:
+    main_layout: main_layout
+    cpb: cpb
+    learned: learned
+    familiar: familiar
+    to_learn: to_learn
+    done: done
+    goal: goal
+    scrollview_layout: scrollview_layout
+
+    FloatLayout:
+        id: main_layout
+        canvas.before:
+            # main BG
+            Color:
+                rgb: 1, 1, 1
+            Rectangle:
+                size: self.width, self.height
+                pos: (self.width / 0.8) * 0.1, (self.height / 0.8) * 0.1
+                source: "word_list_modal.jpg"
+            
+            # 3 boxes on top
+            RoundedRectangle:
+                size: (self.width / 0.8) * 0.678, (self.height / 0.8) * 0.098
+                pos: (self.width / 0.8) * 0.161, (self.height / 0.8) * 0.669
+                radius: 15, 15, 15, 15
+                source: "stats.jpg"
+            
+            # cpb background
+            RoundedRectangle:
+                size: (self.width / 0.8) * 0.369, (self.height / 0.8) * 0.18
+                pos: (self.width / 0.8) * 0.161, (self.height / 0.8) * 0.452
+                radius: 15, 15, 15, 15
+                source: "user_profile_cpb_bkg.jpg"
+
+            # how many words done today
+            RoundedRectangle:
+                size: (self.width / 0.8) * 0.273, (self.height / 0.8) * 0.082
+                pos: (self.width / 0.8) * 0.566, (self.height / 0.8) * 0.55
+                radius: 15, 15, 15, 15
+                source: "done.jpg"
+
+            # goal
+            RoundedRectangle:
+                size: (self.width / 0.8) * 0.273, (self.height / 0.8) * 0.082
+                pos: (self.width / 0.8) * 0.566, (self.height / 0.8) * 0.452
+                radius: 15, 15, 15, 15
+                source: "goal.jpg"
+
+            # separation line
+            Color:
+                rgb: 133/255, 198/255, 253/255
+            Rectangle:
+                size: (self.width / 0.8) * 0.678, 2
+                pos: (self.width / 0.8) * 0.161, (self.height / 0.8) * 0.407
+    
+        # close button
+        Button:
+            pos_hint: {"x": 0.835, "top": 0.985}
+            size_hint: 0.131, 0.061
+            on_press: root.dismiss()
+            background_color: 0, 0, 0, 0
+
+        # user name
+        Label:
+            id: username
+            pos_hint: {"x": 0.073, "top": 0.92}
+            size_hint: 0.854, 0.087
+            text_size: self.size
+            halign: "center"
+            valign: "middle"
+            font_size: 35
+            text: root.update()
+            color: (0, 0, 0, 1)
+
+        # 3 labels: learned, familiar, to learn
+        Label:
+            id: learned
+            pos_hint: {"x": 0.084, "top": 0.787}
+            size_hint: 0.263, 0.062
+            text_size: self.size
+            halign: "center"
+            valign: "middle"
+            font_size: 30
+            text: "10"
+            color: (0, 0, 0, 1)
+
+        Label:
+            id: familiar
+            pos_hint: {"x": 0.37, "top": 0.787}
+            size_hint: 0.261, 0.062
+            text_size: self.size
+            halign: "center"
+            valign: "middle"
+            font_size: 30
+            text: "10"
+            color: (0, 0, 0, 1)
+
+        Label:
+            id: to_learn
+            pos_hint: {"x": 0.656, "top": 0.787}
+            size_hint: 0.261, 0.062
+            text_size: self.size
+            halign: "center"
+            valign: "middle"
+            font_size: 30
+            text: "10"
+            color: (0, 0, 0, 1)
+
+        # CPB for hown many questions done today 
+        CircularProgressBar:
+            id: cpb
+            pos: 105, 570
+            thickness: 10
+            cap_style: "square"
+            max: 10
+            value: 1
+            widget_size: 175
+            background_colour: 138/255, 204/255, 255/255
+            progress_colour: 101/255, 102/255, 174/255
+
+        # done
+        Label:
+            id: done
+            pos_hint: {"x": 0.747, "top": 0.634}
+            size_hint: 0.158, 0.045
+            text_size: self.size
+            halign: "center"
+            valign: "middle"
+            font_size: 30
+            text: "10"
+            color: (0, 0, 0, 1)
+
+        # goal
+        Label:
+            id: goal
+            pos_hint: {"x": 0.747, "top": 0.512}
+            size_hint: 0.158, 0.045
+            text_size: self.size
+            halign: "center"
+            valign: "middle"
+            font_size: 30
+            text: "10"
+            color: (0, 0, 0, 1)
+
+        ScrollView:
+            id: scrollview
+            pos_hint: {"x": 0.073, "top": 0.37}
+            size_hint: 0.854, 0.37
+            
+            GridLayout:
+                id: scrollview_layout
+                size_hint_y: None
+                height: self.minimum_height
+                spacing: 10
+                cols: 1
+
