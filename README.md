@@ -11,3 +11,4 @@ Currently adding more feactures...
 ![alt text](https://github.com/KephaSher/Vocabulary-Learner/blob/main/main_screen_demo.png)
 ![alt text](https://github.com/KephaSher/Vocabulary-Learner/blob/main/word_list_demo.png)
 ![alt text](https://github.com/KephaSher/Vocabulary-Learner/blob/main/add_word_demo.png)
+![alt text](https://github.com/KephaSher/Vocabulary-Learner/blob/main/user_profile_demo.png)
