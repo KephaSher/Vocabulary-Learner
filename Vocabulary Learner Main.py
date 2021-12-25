@@ -1169,6 +1169,8 @@ class UserProfile(ModalView):
 
         self.cpb.value += 1 # buggy code...
         self.cpb.value -= 1
+
+        update_word_lists()
     
         for word_list in word_lists:
             # get the stats from the json file
