@@ -1,11 +1,13 @@
 #:kivy 2.0.0
 #:import WrappedLabel wrapped_label.WrappedLabel
 #:import WrappedButton wrapped_button.WrappedButton
+
 ### templates ###
 # layout for word input boxes, they act like classes in CSS
 <InputFloatLayout@FloatLayout>:
     size_hint: 1, None
     height: 50
+
 # word inputs
 <WordTextInput@TextInput>:
     pos_hint: {"x": 0.082, "top": 1}
@@ -72,7 +74,7 @@
                 size: self.width * 0.666, self.height * 0.069
                 pos: self.width * 0.062, self.height * 0.913
                 radius: 15, 15, 15, 15
-                source: "user_profile.jpg"
+                source: "images/main/user_profile.jpg"
 
             # Settings
             Color:
@@ -81,7 +83,7 @@
                 size: self.width * 0.142, self.height * 0.069
                 pos: self.width * 0.792, self.height * 0.913
                 radius: 15, 15, 15, 15
-                source: "settings.jpg"
+                source: "images/main/settings.jpg"
 
             # Main Practice Box 
             Color:
@@ -90,7 +92,7 @@
                 size: self.width * 0.876, self.height * 0.496
                 pos: self.width * 0.062, self.height * 0.323
                 radius: 25, 25, 25, 25
-                source: "practice_main.jpg"
+                source: "images/main/question_bkg.jpg"
 
             # Inner Practice Box
             Color:
@@ -107,7 +109,7 @@
                 size: self.width * 0.178, self.height * 0.04
                 pos: self.width * 0.422, self.height * 0.344
                 radius: 15, 15, 15, 15
-                source: "next.jpg"
+                source: "images/main/next.jpg"
 
             # # CPB
             Color: 
@@ -126,19 +128,19 @@
                 size: self.width * 0.241, self.height * 0.053
                 pos: self.width * 0.619, self.height * 0.232
                 radius: 15, 15, 15, 15
-                source: "correct.jpg"
+                source: "images/main/correct.jpg"
 
             RoundedRectangle:
                 size: self.width * 0.241, self.height * 0.053
                 pos: self.width * 0.619, self.height * 0.154
                 radius: 15, 15, 15, 15
-                source: "incorrect.jpg"
+                source: "images/main/incorrect.jpg"
 
             # Bottom bar BG
             Rectangle:
                 size: self.width, self.height * 0.116
                 pos: 0, 0
-                source: "bottom_bar.jpg"
+                source: "images/bottom_bar.jpg"
 
         # Top section with name, list, title
         # ----------------------------------
@@ -374,34 +376,34 @@
         Rectangle:
             size: self.width, self.height * 0.041
             pos: 0, self.height * 0.959
-            source: "top_bar.jpg"
+            source: "images/add_words/top_bar.jpg"
 
-        # word input
+        # textinput for word
         RoundedRectangle:
             pos: self.width * 0.392, self.height * 0.862
             size: self.width * 0.522, self.height * 0.05
-            source: "word_input.jpg"
+            source: "images/add_words/word_input.jpg"
         
         # choose list button
         RoundedRectangle:
             size: self.width * 0.465, self.height * 0.066
             pos: self.width * 0.268, self.height * 0.294
             radius: 10, 10, 10, 10
-            source: "choose_list.jpg"
+            source: "images/add_words/choose_list.jpg"
         
         # confirm
         RoundedRectangle:
             size: self.width * 0.21, self.height * 0.097
             pos: self.width * 0.164, self.height * 0.066
             radius: 25, 25, 25, 25
-            source: "confirm.jpg"
+            source: "images/add_words/confirm.jpg"
 
         # cancel
         RoundedRectangle:
             size: self.width * 0.21, self.height * 0.097
             pos: self.width * 0.626, self.height * 0.066
             radius: 25, 25, 25, 25
-            source: "cancel.jpg"
+            source: "images/add_words/cancel.jpg"
             
 
     FloatLayout:
@@ -502,13 +504,13 @@
                 size: self.width * 0.727, self.height * 0.062
                 pos: self.width * 0.055, self.height * 0.877
                 radius: 15, 15, 15, 15
-                source: "dictionary_search_box.jpg"
+                source: "images/dictionary/search_box.jpg"
 
             RoundedRectangle:
                 size: self.width * 0.128, self.height * 0.062
                 pos: self.width * 0.814, self.height * 0.877
                 radius: 15, 15, 15, 15
-                source: "dictionary_search_button.jpg"
+                source: "images/dictionary/search_button.jpg"
 
             Color:
                 rgb: 1, 1, 1
@@ -516,14 +518,14 @@
                 size: self.width * 0.898, self.height * 0.509
                 pos: self.width * 0.049, self.height * 0.25
                 radius: 25, 25, 25, 25
-                source: "dictionary_meanings.jpg"
+                source: "images/dictionary/background.jpg"
 
             Color:
                 rgb: 1, 1, 1
             Rectangle:
                 size: self.width, self.height * 0.116
                 pos: 0, 0
-                source: "bottom_bar.jpg"
+                source: "images/bottom_bar.jpg"
 
 
         # Bottom Bar
@@ -625,13 +627,13 @@
             Rectangle:
                 size: self.width, self.height * 0.116
                 pos: 0, 0
-                source: "bottom_bar.jpg"
+                source: "images/bottom_bar.jpg"
 
             RoundedRectangle:
                 size: self.width * 0.3, self.height * 0.137
                 pos: self.width * 0.61, self.height * 0.201
                 radius: 100, 100, 100, 100
-                source: "add_word.jpg"
+                source: "images/words_list/add_word.jpg"
             
 
         # Bottom Bar
@@ -682,21 +684,21 @@
         Rectangle:
             size: self.width, self.height * 0.041
             pos: 0, self.height * 0.959
-            source: "top_bar_blank.jpg"
+            source: "images/top_bar_blank.jpg"
 
         # search textbox
         RoundedRectangle:
             size: self.width * 0.724, self.height * 0.085
             pos: self.width * 0.138, self.height * 0.828
             radius: 15, 15, 15, 15
-            source: "search_textbox_single_list.jpg"
+            source: "images/single_list/search_textbox.jpg"
 
         # set active button
         RoundedRectangle:
             size: self.width * 0.331, self.height * 0.093
             pos: self.width * 0.327, self.height * 0.047
             radius: 25, 25, 25, 25
-            source: "set_active.jpg"
+            source: "images/single_list/set_active.jpg"
 
     # top bar
     FloatLayout:
@@ -765,13 +767,13 @@
                 size: self.width, self.height
                 # full width * 0.8 = self.width, same for height
                 pos: (self.width / 0.8) * 0.1, (self.height / 0.8) * 0.1
-                source: "word_list_modal.jpg"
+                source: "images/modal_background.jpg"
 
             # word label
             RoundedRectangle:
                 size: (self.width / 0.8) * 0.719, (self.height / 0.8) * 0.067
                 pos: (self.width / 0.8) * 0.137, (self.height / 0.8) * 0.73
-                source: "word_label.jpg"
+                source: "images/word_modal_view/word_label.jpg"
 
         Button:
             pos_hint: {"x": 0.835, "top": 0.985}
@@ -797,25 +799,25 @@
             Rectangle:
                 size: self.width, self.height
                 pos: (self.width / 0.8) * 0.1, (self.height / 0.8) * 0.1
-                source: "word_list_modal.jpg"
+                source: "images/modal_background.jpg"
 
             RoundedRectangle:
                 size: (self.width / 0.8) * 0.719, (self.height / 0.8) * 0.067
                 pos: (self.width / 0.8) * 0.137, (self.height / 0.8) * 0.745
                 radius: 15, 15, 15, 15
-                source: "choose_list.jpg"
+                source: "images/settings/item_background.jpg"
 
             RoundedRectangle:
                 size: (self.width / 0.8) * 0.719, (self.height / 0.8) * 0.067
                 pos: (self.width / 0.8) * 0.137, (self.height / 0.8) * 0.647
                 radius: 15, 15, 15, 15
-                source: "choose_list.jpg"
+                source: "images/settings/item_background.jpg"
 
             RoundedRectangle:
                 size: (self.width / 0.8) * 0.719, (self.height / 0.8) * 0.067
                 pos: (self.width / 0.8) * 0.137, (self.height / 0.8) * 0.545
                 radius: 15, 15, 15, 15
-                source: "choose_list.jpg"
+                source: "images/settings/item_background.jpg"
 
         Button:
             pos_hint: {"x": 0.835, "top": 0.985}
@@ -842,35 +844,35 @@
             Rectangle:
                 size: self.width, self.height
                 pos: (self.width / 0.8) * 0.1, (self.height / 0.8) * 0.1
-                source: "word_list_modal.jpg"
+                source: "images/modal_background.jpg"
             
             # 3 boxes on top
             RoundedRectangle:
                 size: (self.width / 0.8) * 0.678, (self.height / 0.8) * 0.098
                 pos: (self.width / 0.8) * 0.161, (self.height / 0.8) * 0.669
                 radius: 15, 15, 15, 15
-                source: "stats.jpg"
+                source: "images/user_profile/stats.jpg"
             
             # cpb background
             RoundedRectangle:
                 size: (self.width / 0.8) * 0.369, (self.height / 0.8) * 0.18
                 pos: (self.width / 0.8) * 0.161, (self.height / 0.8) * 0.452
                 radius: 15, 15, 15, 15
-                source: "user_profile_cpb_bkg.jpg"
+                source: "images/user_profile/cpb_bkg.jpg"
 
             # how many words done today
             RoundedRectangle:
                 size: (self.width / 0.8) * 0.273, (self.height / 0.8) * 0.082
                 pos: (self.width / 0.8) * 0.566, (self.height / 0.8) * 0.55
                 radius: 15, 15, 15, 15
-                source: "done.jpg"
+                source: "images/user_profile/done.jpg"
 
             # goal
             RoundedRectangle:
                 size: (self.width / 0.8) * 0.273, (self.height / 0.8) * 0.082
                 pos: (self.width / 0.8) * 0.566, (self.height / 0.8) * 0.452
                 radius: 15, 15, 15, 15
-                source: "goal.jpg"
+                source: "images/user_profile/goal.jpg"
 
             # separation line
             Color:
