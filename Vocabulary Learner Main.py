@@ -473,8 +473,8 @@ class AddWords(Screen):
             self.size_hint_y = None
             self.height = 200
             self.hint_text = " Enter meaning"
-            self.background_normal = "meaning_input.jpg"
-            self.background_active = "meaning_input.jpg"
+            self.background_normal = "images/add_words/meaning_input.jpg"
+            self.background_active = "images/add_words/meaning_input.jpg"
             self.padding = (10, 10) # padding_x = padding_y = 10
 
     # the textbox for the main word
@@ -510,7 +510,7 @@ class AddWords(Screen):
 
         # Button to add a new MeaningInput
         self.add_meaning_btn = Button(size_hint_y = None, height = 95,
-            background_normal="add_meaning.jpg")
+            background_normal="images/add_words/add_meaning.jpg")
 
         self.add_meaning_btn.bind(on_press=self.add_new_meaningInput)
 
@@ -572,14 +572,14 @@ class AddWords(Screen):
 
         # [add new list] button created separately from the rest, binded to `self.add_new_list`
         btn = Button(text="Add new list", height=60, size_hint_y=None, color=(0, 0, 0, 1),
-            background_normal="single_list.jpg")
+            background_normal="mages/add_words/word_list.jpg")
         btn.bind(on_press=self.createAddNewListModal)
         self.dropdown.add_widget(btn)
 
         # other buttons are added based on word lists
         for word_list in word_lists:
             btn = Button(text=word_list, height=60, size_hint_y=None, color=(0, 0, 0, 1),
-                background_normal="single_list.jpg")
+                background_normal="images/add_words/word_list.jpg")
 
             # when button is pressed, call select() in dropdown
             btn.bind(on_press = lambda btn: self.dropdown.select(btn.text))
@@ -610,7 +610,7 @@ class AddWords(Screen):
     def createAddNewListModal(self, btn: Button):
         # modal view that contains a textinput and a confirm button 
         self.add_list_modal = ModalView(pos_hint={"center_x": 0.5, "center_y": 0.5}, size_hint=(0.8, 0.8))
-        self.add_list_modal.background = "word_list_modal.jpg"
+        self.add_list_modal.background = "images/modal_background.jpg"
 
         # main layout for the modal view
         layout = FloatLayout()
@@ -620,7 +620,7 @@ class AddWords(Screen):
             hint_text="type in the name of the new list", background_color=(137/255, 166/255, 215/255))
 
         self.modal_confirm_btn = Button(pos_hint={"center_x": 0.5, "top": 0.3}, size_hint=(0.6, 0.1),
-            background_normal = "add_list.jpg")
+            background_normal = "images/add_words/add_list.jpg")
         self.modal_confirm_btn.bind(on_press=self.add_new_list)
 
         # put stuff into the main layout
@@ -808,7 +808,7 @@ class WordsList(Screen):
 
         # Put the buttons inside the gridlayout
         for word_list in word_lists:
-            btn = Button(text=word_list, background_normal="word_list.jpg", font_size=20, 
+            btn = Button(text=word_list, background_normal="images/words_list/word_list.jpg", font_size=20, 
                 color=(0, 0, 0, 1))
             btn.bind(on_press=self.go_to_list)
             scrollview_layout.add_widget(btn)
@@ -915,12 +915,12 @@ class SingleList(Screen):
 
             # word button, triggers modal view
             word_btn = Button(text=word, pos_hint={"x": 0, "bottom": 1}, size_hint=(0.8, 1),
-                background_normal="word.jpg", color=(0, 0, 0, 1))
+                background_normal="images/single_list/word.jpg", color=(0, 0, 0, 1))
             word_btn.bind(on_press=self.go_to_word)
 
             # delete button, triggers word deletion
             delete_btn = Button(pos_hint={"x": 0.78, "bottom": 1}, size_hint=(0.2, 1), 
-                background_normal="delete.jpg")
+                background_normal="images/single_list/delete.jpg")
             delete_btn.bind(on_press=self.delete_word)
 
             scrollview_layout.add_widget(word_btn)
@@ -1000,7 +1000,7 @@ class WordModalView(ModalView):
 
         for i in range(len(meanings)):
             btn = WrappedButton(text=meanings[i], font_size=30, padding=(20, 20),
-                color=(0, 0, 0, 1), background_normal="meaning_label.jpg")
+                color=(0, 0, 0, 1), background_normal="images/meaning_label.jpg")
             btn.size_hint_y = None
             btn.padding_x = 50
 
@@ -1021,7 +1021,7 @@ class WordModalView(ModalView):
     def edit(self, btn: Button):
         # modal view that contains a textinput and a confirm button 
         self.modal = ModalView(pos_hint={"center_x": 0.5, "center_y": 0.5}, size_hint=(0.8, 0.8))
-        self.modal.background = "word_list_modal.jpg"
+        self.modal.background = "images/modal_background.jpg"
 
         # main layout for the modal view
         layout = FloatLayout()
@@ -1032,7 +1032,7 @@ class WordModalView(ModalView):
 
         # confirm button
         self.modal_confirm_btn = Button(pos_hint={"center_x": 0.5, "top": 0.3}, size_hint=(0.6, 0.1),
-            background_normal = "confirm_change_meaning.jpg")
+            background_normal = "images/word_modal_view/confirm.jpg")
 
         self.modal_confirm_btn.bind(on_press = lambda x: self.process(btn))
 
@@ -1130,7 +1130,7 @@ class Dictionary(Screen):
             for i in range(len(meanings)):
                 # Actually a button since label doesn't have background_normal
                 lbl = WrappedButton(text=meanings[i], font_size=30, padding=(20, 20), 
-                    disabled_color=(0, 0, 0, 1), background_disabled_normal="meaning_label.jpg")
+                    disabled_color=(0, 0, 0, 1), background_disabled_normal="images/meaning_label.jpg")
                 lbl.disabled = True
                 lbl.size_hint_y = None
                 lbl.padding_x = 50
@@ -1184,7 +1184,7 @@ class UserProfile(ModalView):
 
             # the button for background, covers the entire screen
             btn = Button(pos_hint={"x": 0, "top": 1}, size_hint=(1, 1), disabled=True,
-                background_disabled_normal="user_profile_list.jpg")
+                background_disabled_normal="images/user_profile/word_list_info.jpg")
             layout.add_widget(btn)
             
             # name of the word list
@@ -1199,10 +1199,12 @@ class UserProfile(ModalView):
             else: correct_p = answered_correct / total_answered
 
             # progress bar made by buttons
-            btn_left = Button(pos_hint={"x": 0.089, "top": 0.438}, disabled=True,
-                size_hint=(0.55 * correct_p, 0.08), background_disabled_normal="dark_blue.jpg")
-            btn_right = Button(pos_hint={"x": 0.089 + 0.55 * correct_p, "top": 0.438}, disabled=True,
-                size_hint=(0.55 * (1 - correct_p), 0.08), background_disabled_normal="light_blue.jpg")
+            btn_left = Button(pos_hint={"x": 0.089, "top": 0.438}, 
+                disabled=True, size_hint=(0.55 * correct_p, 0.08), 
+                    background_disabled_normal="images/user_profile/dark_blue.jpg")
+            btn_right = Button(pos_hint={"x": 0.089 + 0.55 * correct_p, "top": 0.438}, 
+                disabled=True, size_hint=(0.55 * (1 - correct_p), 0.08), 
+                    background_disabled_normal="images/user_profile/light_blue.jpg")
 
             # weird things happen when correct_p = 0 (the button still gets shown)
             if correct_p > 0:
